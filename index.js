@@ -7,6 +7,7 @@ let port = process.env["port"] || 3000;
 const dbKey = process.env["db"];
 const db = mongoose.connect(dbKey, () => {
     console.log("connected to database");
+    console.log("test")
 });
 
 app.get("/", (req, res) => {
