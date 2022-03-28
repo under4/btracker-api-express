@@ -2,6 +2,7 @@
 
 //const mongoose = require("mongoose");
 //const app = express();
+console.log(process.env)
 const port = process.env.PORT || 3000;
 /*
 require("dotenv").config();
@@ -12,7 +13,7 @@ const db = mongoose.connect(dbKey, () => {
 */
 
 app.get("/", (req, res) => {
-    console.log(req);
+    //console.log(req);
     res.json({ greeting: "hello world" });
 });
 
