@@ -3,9 +3,11 @@ const express = require("express");
 const app = express();
 let port = process.env.PORT || 3000;
 
+const dbKey = process.env["db"];
+
 app.get("/", (req, res) => {
     console.log(req);
-    res.json({ greeting: process.env["port"] });
+    res.json({ greeting: process.env["db"] });
 });
 
 app.listen(port, () => {
