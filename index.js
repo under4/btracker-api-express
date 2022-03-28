@@ -5,7 +5,7 @@ let port = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
     console.log(req);
-    res.json({ greeting: "hello world" });
+    res.json({ greeting: process.env["port"] });
 });
 
 app.listen(port, () => {
