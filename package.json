@@ -1,0 +1,24 @@
+{
+  "name": "btracker-api",
+  "version": "1.0.0",
+  "description": "backend api for bug tracker project",
+  "main": "index.js",
+  "scripts": {
+    "test": "test",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "api",
+    "bug",
+    "tracker"
+  ],
+  "author": "under4",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.3",
+    "mongoose": "^6.2.8"
+  },
+  "engines": {
+    "node": "^10.16.2"
+  }
+}
