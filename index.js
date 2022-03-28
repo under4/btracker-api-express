@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const app = express();
-let port = process.env.PORT || 3000;
+let port = process.env.PORT || 5000;
 
 const dbKey = process.env["db"];
 const db = mongoose.connect(dbKey, () => {
