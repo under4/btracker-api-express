@@ -1,7 +1,7 @@
-//const express = require("express");
+const express = require("express");
 
-//const mongoose = require("mongoose");
-//const app = express();
+const mongoose = require("mongoose");
+const app = express();
 console.log(process.env)
 const port = process.env.PORT || 3000;
 /*
