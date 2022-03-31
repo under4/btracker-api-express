@@ -2,10 +2,10 @@
   "name": "btracker-api",
   "version": "1.0.0",
   "description": "backend api for bug tracker project",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "test",
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "keywords": [
     "api",
@@ -15,11 +15,16 @@
   "author": "under4",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.19.2",
+    "bcrypt": "^5.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
+    "express-flash": "^0.0.2",
+    "express-session": "^1.17.2",
+    "method-override": "^3.0.0",
     "mongoose": "^6.2.8",
+    "passport": "^0.5.2",
+    "passport-local": "^1.0.0",
     "serve": "^13.0.2"
   },
   "engines": {
