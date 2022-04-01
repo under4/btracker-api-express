@@ -1,7 +1,6 @@
 if (process.env.NODE_ENV != "production") {
     require("dotenv").config();
 }
-
 const express = require("express");
 const mongoose = require("mongoose");
 const app = express();
@@ -67,7 +66,7 @@ app.post("/register", async (req, res) => {
                     username: req.body.email,
                     password: hashedPass,
                 });
-                newUser.save().then((data) => {
+                newUser.save().then(() => {
                     res.send("success");
                 });
             } else {
@@ -92,6 +91,7 @@ app.delete("/logout", (req, res) => {
 });
 
 app.get("/auth", checkAuth, (req, res) => {
+    console.log("test");
     res.send(true);
 });
 
@@ -99,7 +99,7 @@ function checkAuth(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
-    res.redirect(`${process.env.APP_URL}/signin`);
+    return res.redirect(`${process.env.APP_URL}/signin`);
 }
 
 app.listen(port, () => {
