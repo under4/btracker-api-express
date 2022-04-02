@@ -91,15 +91,14 @@ app.delete("/logout", (req, res) => {
 });
 
 app.get("/auth", checkAuth, (req, res) => {
-    console.log("test");
-    res.send(true);
+    res.json({ err: 0 });
 });
 
 function checkAuth(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
-    return res.redirect(`${process.env.APP_URL}/signin`);
+    return res.json({ err: 1 });
 }
 
 app.listen(port, () => {
