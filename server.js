@@ -31,16 +31,28 @@ app.use(methodOverride("_method"));
 const User = require("./Schema/User");
 
 const initializePass = require("./passport-config");
-initializePass(passport, (username) => {
-    User.findOne({ username: username }, (err, data) => {
-        if (err) {
-            return console.log(err);
-        }
-        if (data != null) {
+initializePass(
+    passport,
+    (username) => {
+        User.findOne(username, (err, data) => {
+            if (err) {
+                return console.log(err);
+            }
+            if (data != null) {
+                console.log(data);
+                return data;
+            }
+        });
+    } /*,
+    (id) => {
+        return User.findById(id, (err, data) => {
+            if (err) {
+                return console.log(err);
+            }
             return data;
-        }
-    });
-});
+        });
+    }*/
+);
 
 const db = mongoose.connect(dbKey, () => {
     console.log("connected to database");
@@ -54,13 +66,24 @@ app.get("/", (req, res) => {
 //new user
 app.post("/register", async (req, res) => {
     try {
-        const hashedPass = await bcrypt.hash(req.body.password, 10);
+        const hashedPass = await bcrypt.hash(
+            req.body.password,
+            10,
+            function (err, hash) {
+                if (err) {
+                    return console.log(err);
+                }
+                console.log(req.body.password);
+                console.log(hash);
+                return hash;
+            }
+        );
         User.findOne({ username: req.body.email }, function (err, data) {
             if (err) {
                 return console.log(err);
             }
-            console.log(data);
-            console.log(hashedPass);
+            //console.log(data);
+            //console.log(hashedPass);
             if (data == null) {
                 const newUser = new User({
                     username: req.body.email,
@@ -90,16 +113,12 @@ app.delete("/logout", (req, res) => {
     res.redirect("/");
 });
 
-app.get("/auth", checkAuth, (req, res) => {
+app.get("/auth", (req, res) => {
+    if (req.isAuthenticated()) {
+        return res.json({ err: 1 });
+    }
     res.json({ err: 0 });
 });
-
-function checkAuth(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    return res.json({ err: 1 });
-}
 
 app.listen(port, () => {
     console.log(`App is listening at ${port}`);
