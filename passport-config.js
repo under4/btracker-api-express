@@ -3,28 +3,28 @@ const bcrypt = require("bcrypt");
 
 function initializePass(passport, getUserByEmail, getUserId) {
     const authenticateUser = async (email, password, done) => {
-        const user = getUserByEmail({ username: email });
-        console.log(user);
+        const user = await getUserByEmail({ username: email });
+        //console.log(user, " user");
         if (user == null) {
             return done(null, false, { message: "No user found" });
         }
 
         try {
             //console.log(password);
-            //console.log(user);
-            if (
-                await bcrypt.compare(
-                    password,
-                    user.password,
-                    (err, result) => result
-                )
-            ) {
-                console.log("correct pass");
-                return done(null, user);
-            } else {
-                console.log("wrong pass");
-                return done(null, false, { message: "Password incorrect" });
-            }
+            return bcrypt.compare(
+                password,
+                user.password,
+                (err, result) => {
+                    if(err){console.log(err)}
+                    if(result){
+                        console.log("correct pass");
+                        return done(null, user);
+                    } else {
+                        console.log("wrong pass");
+                        return done(null, false, { message: "Password incorrect" });
+                    }
+                }
+            )
         } catch (e) {
             return done(e);
         }
@@ -34,7 +34,7 @@ function initializePass(passport, getUserByEmail, getUserId) {
         new LocalStrategy({ usernameField: "email" }, authenticateUser)
     );
     passport.serializeUser((user, done) => done(null, user.id));
-    passport.deserializeUser((user, done) => {});
+    passport.deserializeUser((id, done) => done(null, getUserId(id)));
 }
 
 module.exports = initializePass;

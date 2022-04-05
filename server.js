@@ -33,16 +33,12 @@ const User = require("./Schema/User");
 const initializePass = require("./passport-config");
 initializePass(
     passport,
-    (username) => {
-        User.findOne(username, (err, data) => {
-            if (err) {
-                return console.log(err);
-            }
-            if (data != null) {
-                console.log(data);
-                return data;
-            }
-        });
+    async (username) => {
+        const userQuery = User.findOne(username).exec();
+        return userQuery.then(function(user){
+            //console.log(user)
+            return user
+        })
     } /*,
     (id) => {
         return User.findById(id, (err, data) => {
@@ -73,8 +69,8 @@ app.post("/register", async (req, res) => {
                 if (err) {
                     return console.log(err);
                 }
-                console.log(req.body.password);
-                console.log(hash);
+                //console.log(req.body.password);
+                //console.log(hash);
                 return hash;
             }
         );
@@ -114,10 +110,13 @@ app.delete("/logout", (req, res) => {
 });
 
 app.get("/auth", (req, res) => {
+    console.log(req.isAuthenticated())
     if (req.isAuthenticated()) {
         return res.json({ err: 1 });
+    } else {
+        res.json({ err: 0 });
     }
-    res.json({ err: 0 });
+    
 });
 
 app.listen(port, () => {
