@@ -39,7 +39,7 @@ initializePass(
             //console.log(user)
             return user
         })
-    } /*,
+    } ,
     (id) => {
         return User.findById(id, (err, data) => {
             if (err) {
@@ -47,7 +47,7 @@ initializePass(
             }
             return data;
         });
-    }*/
+    }
 );
 
 const db = mongoose.connect(dbKey, () => {
@@ -105,6 +105,7 @@ app.post(
 );
 
 app.delete("/logout", (req, res) => {
+    console.log(req)
     req.logOut();
     res.redirect("/");
 });
