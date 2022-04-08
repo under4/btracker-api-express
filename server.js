@@ -13,8 +13,12 @@ const session = require("express-session");
 const passport = require("passport");
 const methodOverride = require("method-override");
 
-
-app.use(cors())
+app.use(
+    cors({
+        origin: process.env.APP_URL,
+        credentials: true,
+    })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(flash());
@@ -22,11 +26,10 @@ app.use(
     session({
         secret: process.env.SESSION_SECRET,
         cookie: {
-            maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
+            maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
         },
-        cookie: { secure: false },
         resave: false,
-        saveUninitialized: false
+        saveUninitialized: false,
     })
 );
 app.use(passport.initialize());
@@ -42,11 +45,11 @@ initializePass(
         const userQuery = User.findOne(username).exec();
         const user = await userQuery;
         return user;
-    } ,
+    },
     async (id) => {
-        const idQuery = User.find(id).exec()
+        const idQuery = User.find(id).exec();
         const idResult = await idQuery;
-        return idResult
+        return idResult;
     }
 );
 
@@ -55,23 +58,18 @@ const db = mongoose.connect(dbKey, () => {
 });
 
 app.get("/", (req, res) => {
-    //console.log(req);
     res.json({ greeting: "hello world" });
 });
 
 //new user
 app.post("/register", async (req, res) => {
     try {
-        const hashedPass = bcrypt.hash(
-            req.body.password,
-            10,
-            (err, hash) => {
-                if (err) {
-                    return console.log(err);
-                }
-                return hash;
+        const hashedPass = bcrypt.hash(req.body.password, 10, (err, hash) => {
+            if (err) {
+                return console.log(err);
             }
-        );
+            return hash;
+        });
         User.findOne({ username: req.body.email }, function (err, data) {
             if (err) {
                 return console.log(err);
@@ -89,7 +87,7 @@ app.post("/register", async (req, res) => {
             }
         });
     } catch {
-        res.redirect(`${process.env.APP_URL}/login/register`)
+        res.redirect(`${process.env.APP_URL}/login/register`);
     }
 });
 
@@ -107,18 +105,15 @@ app.delete("/logout", (req, res) => {
     res.redirect(`${process.env.APP_URL}`);
 });
 
-app.get("/auth",(req, res) => {
-    console.log("isAuthenticated(): ", req.isAuthenticated())
+app.get("/auth", (req, res) => {
+    console.log("isAuthenticated(): ", req.isAuthenticated());
 
     if (req.isAuthenticated()) {
         return res.json({ err: 0 });
     } else {
         res.json({ err: 1 });
     }
-    
 });
-
-
 
 app.listen(port, () => {
     console.log(`App is listening at ${port}`);
