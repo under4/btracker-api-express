@@ -10,21 +10,13 @@ function initializePass(passport, getUserByEmail, getUserId) {
         }
 
         try {
-            //console.log(password);
-            return bcrypt.compare(
-                password,
-                user.password,
-                (err, result) => {
-                    if(err){console.log(err)}
-                    if(result){
-                        console.log("correct pass");
-                        return done(null, user);
-                    } else {
-                        console.log("wrong pass");
-                        return done(null, false, { message: "Password incorrect" });
-                    }
-                }
-            )
+            if(await bcrypt.compare(password, user.password)) {
+                console.log("login success ")
+                return done(null, user)
+            } else {
+                console.log("login fail ")
+                return done(null, false, { message: "Password incorrect" });
+            }
         } catch (e) {
             return done(e);
         }
@@ -34,7 +26,7 @@ function initializePass(passport, getUserByEmail, getUserId) {
         new LocalStrategy({ usernameField: "email" }, authenticateUser)
     );
     passport.serializeUser((user, done) => done(null, user.id));
-    passport.deserializeUser((id, done) => done(null, getUserId(id)));
+    passport.deserializeUser((id, done) => done(null, getUserId({ id: id })));
 }
 
 module.exports = initializePass;

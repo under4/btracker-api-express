@@ -13,15 +13,20 @@ const session = require("express-session");
 const passport = require("passport");
 const methodOverride = require("method-override");
 
-app.use(cors());
+
+app.use(cors())
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(flash());
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
+        cookie: {
+            maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
+        },
+        cookie: { secure: false },
         resave: false,
-        saveUninitialized: false,
+        saveUninitialized: false
     })
 );
 app.use(passport.initialize());
@@ -35,18 +40,13 @@ initializePass(
     passport,
     async (username) => {
         const userQuery = User.findOne(username).exec();
-        return userQuery.then(function(user){
-            //console.log(user)
-            return user
-        })
+        const user = await userQuery;
+        return user;
     } ,
-    (id) => {
-        return User.findById(id, (err, data) => {
-            if (err) {
-                return console.log(err);
-            }
-            return data;
-        });
+    async (id) => {
+        const idQuery = User.find(id).exec()
+        const idResult = await idQuery;
+        return idResult
     }
 );
 
@@ -55,22 +55,20 @@ const db = mongoose.connect(dbKey, () => {
 });
 
 app.get("/", (req, res) => {
-    console.log(req);
+    //console.log(req);
     res.json({ greeting: "hello world" });
 });
 
 //new user
 app.post("/register", async (req, res) => {
     try {
-        const hashedPass = await bcrypt.hash(
+        const hashedPass = bcrypt.hash(
             req.body.password,
             10,
-            function (err, hash) {
+            (err, hash) => {
                 if (err) {
                     return console.log(err);
                 }
-                //console.log(req.body.password);
-                //console.log(hash);
                 return hash;
             }
         );
@@ -78,8 +76,6 @@ app.post("/register", async (req, res) => {
             if (err) {
                 return console.log(err);
             }
-            //console.log(data);
-            //console.log(hashedPass);
             if (data == null) {
                 const newUser = new User({
                     username: req.body.email,
@@ -92,33 +88,37 @@ app.post("/register", async (req, res) => {
                 res.send("fail");
             }
         });
-    } catch {}
+    } catch {
+        res.redirect(`${process.env.APP_URL}/login/register`)
+    }
 });
 
 app.post(
     "/login",
     passport.authenticate("local", {
         successRedirect: `${process.env.APP_URL}/console`,
-        failureRedirect: `${process.env.APP_URL}/signin`,
+        failureRedirect: `${process.env.APP_URL}/login`,
         failureFlash: true,
     })
 );
 
 app.delete("/logout", (req, res) => {
-    console.log(req)
     req.logOut();
-    res.redirect("/");
+    res.redirect(`${process.env.APP_URL}`);
 });
 
-app.get("/auth", (req, res) => {
-    console.log(req.isAuthenticated())
+app.get("/auth",(req, res) => {
+    console.log("isAuthenticated(): ", req.isAuthenticated())
+
     if (req.isAuthenticated()) {
-        return res.json({ err: 1 });
+        return res.json({ err: 0 });
     } else {
-        res.json({ err: 0 });
+        res.json({ err: 1 });
     }
     
 });
+
+
 
 app.listen(port, () => {
     console.log(`App is listening at ${port}`);
