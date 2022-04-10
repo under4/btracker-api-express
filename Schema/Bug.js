@@ -1,11 +1,13 @@
 const mongoose = require("mongoose");
 
+
+
 const BugSchema = mongoose.Schema({
     author: {type:mongoose.SchemaTypes.ObjectId, required:true},
     bugTitle: {type:String, required:true},
     description: String,
     status: String,
-    labels: Array,
+    labels: [{labelText:String, colorValue:String}],
     comments: [mongoose.SchemaTypes.ObjectId]
 });
 
