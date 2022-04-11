@@ -5,8 +5,9 @@ const UserSchema = mongoose.Schema({
     username: { type: String, required: true },
     password: { type: String, required: true },
     teams: [{ type: mongoose.SchemaTypes.ObjectId, ref: "Team" }],
-    activeTeam: { type: mongoose.SchemaTypes.ObjectId, required: false },
+    activeTeam: { type: mongoose.SchemaTypes.ObjectId, ref:"Team"},
     activeTheme: { type: String, default: "light" },
+    notifications: [{ text: String, link: String }]
 });
 
 module.exports = mongoose.model("User", UserSchema);

@@ -36,9 +36,15 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(methodOverride("_method"));
 
+const Comment = require("./Schema/Comment");
 const User = require("./Schema/User");
+const Bug = require("./Schema/Bug");
+const Team = require("./Schema/Team");
+const Project = require("./Schema/Project");
+
 
 const initializePass = require("./passport-config");
+const { type } = require("express/lib/response");
 initializePass(
     passport,
     async (username) => {
@@ -76,6 +82,7 @@ app.post("/register", async (req, res) => {
             }
             if (data == null) {
                 const newUser = new User({
+                    name: req.body.name,
                     username: req.body.email,
                     password: hashedPass,
                 });
@@ -99,6 +106,32 @@ app.post(
         failureFlash: true,
     })
 );
+
+app.post("/createTeam", (req, res)=> {
+    Team.findOne({name:req.body.teamName}, function(err, data){
+        console.log(typeof(req.session.passport.user))
+        if(err){return console.log(err)}
+        if(data==null){
+            //console.log(req)
+            const newTeam = new Team({
+                name:req.body.teamName,
+                users:[],
+            });
+            User.findById(mongoose.Types.ObjectId(req.session.passport.user), function(err, data){
+                if(err){return console.log(err)}
+                data.teams.push(newTeam.id);
+                data.activeTeam = newTeam.id;
+                data.save();
+            })
+            newTeam.users.push([req.session.passport.user,"lead"])
+            
+            newTeam.save().then(() => {
+                res.send("success");
+            });
+            
+        }
+    })
+})
 
 app.delete("/logout", (req, res) => {
     req.logOut();
