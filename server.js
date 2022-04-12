@@ -36,6 +36,11 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(methodOverride("_method"));
 
+app.use(function(req,res,next){
+    res.locals.currentUser = req.user;
+    next();
+})
+
 const Comment = require("./Schema/Comment");
 const User = require("./Schema/User");
 const Bug = require("./Schema/Bug");
@@ -74,25 +79,27 @@ app.post("/register", async (req, res) => {
             if (err) {
                 return console.log(err);
             }
-            return hash;
+            User.findOne({ username: req.body.email }, function (err, data) {
+                if (err) {
+                    return console.log(err);
+                }
+                console.log(hash)
+                if (data == null) {
+                    const newUser = new User({
+                        name: req.body.name,
+                        username: req.body.email,
+                        password: hash,
+                    });
+                    console.log(newUser)
+                    newUser.save().then(() => {
+                        res.send("success");
+                    });
+                } else {
+                    res.send("fail");
+                }
+            });
         });
-        User.findOne({ username: req.body.email }, function (err, data) {
-            if (err) {
-                return console.log(err);
-            }
-            if (data == null) {
-                const newUser = new User({
-                    name: req.body.name,
-                    username: req.body.email,
-                    password: hashedPass,
-                });
-                newUser.save().then(() => {
-                    res.send("success");
-                });
-            } else {
-                res.send("fail");
-            }
-        });
+        
     } catch {
         res.redirect(`${process.env.APP_URL}/login/register`);
     }
@@ -107,12 +114,18 @@ app.post(
     })
 );
 
+app.get("/getConsoleInfo", (req,res)=>{
+    //console.log(req)
+    User.findById(mongoose.Types.ObjectId(req.session.passport.user), function(err, data){
+        if(err){return console.log(err)}
+        console.log(data)
+    })
+})
+
 app.post("/createTeam", (req, res)=> {
     Team.findOne({name:req.body.teamName}, function(err, data){
-        console.log(typeof(req.session.passport.user))
         if(err){return console.log(err)}
         if(data==null){
-            //console.log(req)
             const newTeam = new Team({
                 name:req.body.teamName,
                 users:[],
@@ -128,7 +141,6 @@ app.post("/createTeam", (req, res)=> {
             newTeam.save().then(() => {
                 res.send("success");
             });
-            
         }
     })
 })
