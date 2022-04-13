@@ -36,17 +36,16 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(methodOverride("_method"));
 
-app.use(function(req,res,next){
+app.use(function (req, res, next) {
     res.locals.currentUser = req.user;
     next();
-})
+});
 
 const Comment = require("./Schema/Comment");
 const User = require("./Schema/User");
 const Bug = require("./Schema/Bug");
 const Team = require("./Schema/Team");
 const Project = require("./Schema/Project");
-
 
 const initializePass = require("./passport-config");
 const { type } = require("express/lib/response");
@@ -83,14 +82,14 @@ app.post("/register", async (req, res) => {
                 if (err) {
                     return console.log(err);
                 }
-                console.log(hash)
+                console.log(hash);
                 if (data == null) {
                     const newUser = new User({
                         name: req.body.name,
                         username: req.body.email,
                         password: hash,
                     });
-                    console.log(newUser)
+                    console.log(newUser);
                     newUser.save().then(() => {
                         res.send("success");
                     });
@@ -99,7 +98,6 @@ app.post("/register", async (req, res) => {
                 }
             });
         });
-        
     } catch {
         res.redirect(`${process.env.APP_URL}/login/register`);
     }
@@ -114,36 +112,112 @@ app.post(
     })
 );
 
-app.get("/getConsoleInfo", (req,res)=>{
+app.get("/getConsoleInfo", (req, res) => {
     //console.log(req)
-    User.findById(mongoose.Types.ObjectId(req.session.passport.user), function(err, data){
-        if(err){return console.log(err)}
-        console.log(data)
-    })
-})
+    User.findById(
+        mongoose.Types.ObjectId(req.session.passport.user),
+        function (err, user) {
+            if (err) return console.log(err);
+            user.password =
+                "$2a$10$UKFB2.cxQrMCqldh3gUZheh6bBIMk/mcJsX3Ys9p6tjl/pRvWN9Yq";
+            Team.findById(
+                mongoose.Types.ObjectId(user.activeTeam),
+                (error, team) => {
+                    if (error)
+                        return res.json({
+                            err: 1,
+                            message: "an error occured",
+                        });
 
-app.post("/createTeam", (req, res)=> {
-    Team.findOne({name:req.body.teamName}, function(err, data){
-        if(err){return console.log(err)}
-        if(data==null){
+                    res.json({ user: user, team: team });
+                }
+            );
+        }
+    );
+});
+
+app.post("/createTeam", (req, res) => {
+    Team.findOne({ name: req.body.teamName }, function (err, data) {
+        if (err) {
+            return console.log(err);
+        }
+        if (data == null) {
             const newTeam = new Team({
-                name:req.body.teamName,
-                users:[],
+                name: req.body.teamName,
+                users: [],
             });
-            User.findById(mongoose.Types.ObjectId(req.session.passport.user), function(err, data){
-                if(err){return console.log(err)}
-                data.teams.push(newTeam.id);
-                data.activeTeam = newTeam.id;
-                data.save();
-            })
-            newTeam.users.push([req.session.passport.user,"lead"])
-            
+            User.findById(
+                mongoose.Types.ObjectId(req.session.passport.user),
+                function (error, user) {
+                    if (error) {
+                        return console.log(error);
+                    }
+                    user.teams.push([
+                        req.body.teamName,
+                        mongoose.Types.ObjectId(newTeam.id),
+                        1,
+                    ]);
+                    user.activeTeam = newTeam.id;
+                    user.save();
+                }
+            );
+            newTeam.users.push([req.session.passport.user, "lead"]);
+
             newTeam.save().then(() => {
                 res.send("success");
             });
         }
-    })
-})
+    });
+});
+
+app.post("/createProject", (req, res) => {
+    User.findById(
+        mongoose.Types.ObjectId(req.session.passport.user),
+        (err, user) => {
+            if (err) return res.json({ err: 1, message: "an error occured" });
+            Team.findById(
+                mongoose.Types.ObjectId(user.activeTeam),
+                (error, team) => {
+                    if (error)
+                        return res.json({
+                            err: 1,
+                            message: "an error occured",
+                        });
+
+                    if (
+                        team.projects.filter(
+                            (project) => project[0] == req.body.newProjectName
+                        ) > 0
+                    )
+                        return res.json({
+                            err: 1,
+                            message:
+                                "This team already has a project by that name",
+                        });
+
+                    const newProject = new Project({
+                        name: req.body.newProjectName,
+                        team: mongoose.Types.ObjectId(user.activeTeam),
+                    });
+                    team.projects.push([
+                        req.body.newProjectName,
+                        newProject.id,
+                    ]);
+                    team.save();
+                    user.activeProject = newProject.id;
+                    user.save();
+                    newProject
+                        .save()
+                        .then(res.json({ err: 0, message: "Success" }));
+                }
+            );
+        }
+    );
+});
+
+app.post("/getProjectInfo", (req, res) => {
+    console.log(req);
+});
 
 app.delete("/logout", (req, res) => {
     req.logOut();
