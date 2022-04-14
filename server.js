@@ -216,7 +216,14 @@ app.post("/createProject", (req, res) => {
 });
 
 app.post("/getProjectInfo", (req, res) => {
-    console.log(req);
+    console.log(req.body)
+    /*
+    Project.findById(mongoose.Types.ObjectId(req.body.projectId), (err, project)=>{
+        if(err) return err
+        console.log(project)
+        res.json(project)
+    })
+    */
 });
 
 app.delete("/logout", (req, res) => {
