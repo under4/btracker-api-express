@@ -228,7 +228,8 @@ app.post("/postBug", (req,res)=>{
             labels: labels,
             priority: req.body.priority,
         })
-        console.log(newBug)
+        project.bugs.push(newBug)
+        project.save().then(res.json({err:0}))
     })
 })
 
