@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const BugSchema = mongoose.Schema({
     author: { type: mongoose.SchemaTypes.ObjectId, required: true },
     bugTitle: { type: String, required: true },
+    priority: { type: String, required: true },
     description: String,
     status: String,
     labels: [{ labelText: String, colorValue: String }],

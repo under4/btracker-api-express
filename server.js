@@ -215,15 +215,35 @@ app.post("/createProject", (req, res) => {
     );
 });
 
+app.post("/postBug", (req,res)=>{
+    Project.findById(req.body.project, (err,project)=>{
+        if(err)return res.json({err: 1})
+
+        const labels = req.body.labels.split(",")
+
+        const newBug = new Bug({
+            author: req.session.passport.user,
+            bugTitle: req.body.bug,
+            description: req.body.description,
+            labels: labels,
+            priority: req.body.priority,
+        })
+        console.log(newBug)
+    })
+})
+
 app.post("/getProjectInfo", (req, res) => {
-    console.log(req.body)
-    /*
+    console.log(req.body.activeTeam)
+
+
     Project.findById(mongoose.Types.ObjectId(req.body.projectId), (err, project)=>{
         if(err) return err
-        console.log(project)
-        res.json(project)
+
+        if(req.body.activeTeam == project.team) return res.json(project)
+        
+        Team.findById(mongoose.Types.ObjectId(req.body.activeTeam), (err,team) => {console.log("to be implemented")})
     })
-    */
+    
 });
 
 app.delete("/logout", (req, res) => {
