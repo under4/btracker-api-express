@@ -112,8 +112,17 @@ app.post(
     })
 );
 
+app.post("/getBug", (req, res) => {
+    Project.findById(req.body.projectId, (err, project) => {
+        if (err) return res.json({ err: 1 });
+        return res.json(
+            project.bugs.filter((bug) => (bug._id = req.body.bugId))[0]
+        );
+    });
+});
+
 app.get("/getConsoleInfo", (req, res) => {
-    //console.log(req)
+    //console.log(req.session);
     User.findById(
         mongoose.Types.ObjectId(req.session.passport.user),
         function (err, user) {
@@ -195,9 +204,15 @@ app.post("/createProject", (req, res) => {
                                 "This team already has a project by that name",
                         });
 
+                    const words = req.body.newProjectName.split(" ");
+                    const identifier =
+                        words.length > 1
+                            ? words[0][0] + words[1][0]
+                            : words[0][0] + words[0][1];
                     const newProject = new Project({
                         name: req.body.newProjectName,
                         team: mongoose.Types.ObjectId(user.activeTeam),
+                        projectIdentifier: identifier,
                     });
                     team.projects.push([
                         req.body.newProjectName,
@@ -215,36 +230,54 @@ app.post("/createProject", (req, res) => {
     );
 });
 
-app.post("/postBug", (req,res)=>{
-    Project.findById(req.body.project, (err,project)=>{
-        if(err)return res.json({err: 1})
+app.post("/postBug", (req, res) => {
+    Project.findById(req.body.project, (err, project) => {
+        if (err) return res.json({ err: 1 });
 
-        const labels = req.body.labels.split(",")
+        const labels = req.body.labels.split(",");
+
+        var due = req.body.due;
+        if (due == null) {
+            due = Date.now() + 7;
+        }
+
+        const bugId =
+            project.projectIdentifier + "-" + project.bugIdIncrementer;
 
         const newBug = new Bug({
+            bugId: bugId,
             author: req.session.passport.user,
             bugTitle: req.body.bug,
             description: req.body.description,
             labels: labels,
             priority: req.body.priority,
-        })
-        project.bugs.push(newBug)
-        project.save().then(res.json({err:0}))
-    })
-})
+            status: "open",
+            due: due,
+        });
+        project.bugIdIncrementer = project.bugIdIncrementer + 1;
+        project.bugs.push(newBug);
+        project.save().then(res.json({ err: 0 }));
+    });
+});
 
 app.post("/getProjectInfo", (req, res) => {
-    console.log(req.body.activeTeam)
+    //console.log(req.body.activeTeam);
 
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return err;
 
-    Project.findById(mongoose.Types.ObjectId(req.body.projectId), (err, project)=>{
-        if(err) return err
+            if (req.body.activeTeam == project.team) return res.json(project);
 
-        if(req.body.activeTeam == project.team) return res.json(project)
-        
-        Team.findById(mongoose.Types.ObjectId(req.body.activeTeam), (err,team) => {console.log("to be implemented")})
-    })
-    
+            Team.findById(
+                mongoose.Types.ObjectId(req.body.activeTeam),
+                (err, team) => {
+                    console.log("to be implemented");
+                }
+            );
+        }
+    );
 });
 
 app.delete("/logout", (req, res) => {
@@ -253,7 +286,7 @@ app.delete("/logout", (req, res) => {
 });
 
 app.get("/auth", (req, res) => {
-    console.log("isAuthenticated(): ", req.isAuthenticated());
+    //console.log("isAuthenticated(): ", req.isAuthenticated());
 
     if (req.isAuthenticated()) {
         return res.json({ err: 0 });

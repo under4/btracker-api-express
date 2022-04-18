@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const BugSchema = mongoose.Schema({
     author: { type: mongoose.SchemaTypes.ObjectId, required: true },
+    bugId: { type: String, required: true },
     bugTitle: { type: String, required: true },
     priority: { type: String, required: true },
     description: String,
@@ -10,6 +11,7 @@ const BugSchema = mongoose.Schema({
     comments: [{ type: mongoose.SchemaTypes.ObjectId, ref: "Comment" }],
     assigned: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],
     followedBy: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],
+    due: { type: Date },
 });
 
 module.exports = mongoose.model("Bug", BugSchema);
