@@ -116,13 +116,12 @@ app.post("/getBug", (req, res) => {
     Project.findById(req.body.projectId, (err, project) => {
         if (err) return res.json({ err: 1 });
         return res.json(
-            project.bugs.filter((bug) => (bug._id = req.body.bugId))[0]
+            project.bugs.filter((bug) => bug._id == req.body.bugId)[0]
         );
     });
 });
 
 app.get("/getConsoleInfo", (req, res) => {
-    //console.log(req.session);
     User.findById(
         mongoose.Types.ObjectId(req.session.passport.user),
         function (err, user) {
@@ -246,7 +245,7 @@ app.post("/postBug", (req, res) => {
 
         const newBug = new Bug({
             bugId: bugId,
-            author: req.session.passport.user,
+            author: {authorId:req.session.passport.user, authorName:req.body.name},
             bugTitle: req.body.bug,
             description: req.body.description,
             labels: labels,
