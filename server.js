@@ -259,6 +259,30 @@ app.post("/postBug", (req, res) => {
     });
 });
 
+app.post("/postComment", (req,res) => {
+    Project.findById(mongoose.Types.ObjectId(req.body.project), (err, project)=>{
+        if(err) return err;
+
+        //console.log(project)        
+        //console.log(bug)
+        const newComment = new Comment({
+            author:{authorId:req.session.passport.user, authorName: req.session.name},
+            commentText: req.body.comment,
+            comments:[],
+        })
+    
+        for(var i=0; i < project.bugs.length; i++){
+            if(project.bugs[i]._id == req.body.bugId){
+                project.bugs[i].comments.push(newComment)
+                console.log(project.bugs[i])
+                project.save().then(res.send("success"))
+            }
+        }
+        console.log(project)
+    })
+       
+})
+
 app.post("/getProjectInfo", (req, res) => {
     //console.log(req.body.activeTeam);
 
