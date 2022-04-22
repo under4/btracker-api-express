@@ -122,6 +122,7 @@ app.post("/getBug", (req, res) => {
 });
 
 app.get("/getConsoleInfo", (req, res) => {
+    console.log(req);
     User.findById(
         mongoose.Types.ObjectId(req.session.passport.user),
         function (err, user) {
@@ -234,10 +235,18 @@ app.post("/postBug", (req, res) => {
         if (err) return res.json({ err: 1 });
 
         const labels = req.body.labels.split(",");
+        for (let i = 0; i < labels.length; i++) {
+            labels[i] = labels[i].trim();
+            if (labels[i].length < 1) {
+                labels.splice(i, 1);
+                i--;
+            }
+        }
 
         var due = req.body.due;
-        if (due == null) {
-            due = Date.now() + 7;
+        if (due == "") {
+            due = new Date();
+            due = new Date(due.setDate(due.getDate() + 7));
         }
 
         const bugId =
@@ -245,7 +254,10 @@ app.post("/postBug", (req, res) => {
 
         const newBug = new Bug({
             bugId: bugId,
-            author: {authorId:req.session.passport.user, authorName:req.body.name},
+            author: {
+                authorId: req.session.passport.user,
+                authorName: req.body.name,
+            },
             bugTitle: req.body.bug,
             description: req.body.description,
             labels: labels,
@@ -259,33 +271,36 @@ app.post("/postBug", (req, res) => {
     });
 });
 
-app.post("/postComment", (req,res) => {
-    Project.findById(mongoose.Types.ObjectId(req.body.project), (err, project)=>{
-        if(err) return err;
+app.post("/postComment", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.project),
+        (err, project) => {
+            if (err) return err;
 
-        //console.log(project)        
-        //console.log(bug)
-        const newComment = new Comment({
-            author:{authorId:req.session.passport.user, authorName: req.session.name},
-            commentText: req.body.comment,
-            comments:[],
-        })
-    
-        for(var i=0; i < project.bugs.length; i++){
-            if(project.bugs[i]._id == req.body.bugId){
-                project.bugs[i].comments.push(newComment)
-                console.log(project.bugs[i])
-                project.save().then(res.send("success"))
+            const newComment = new Comment({
+                author: {
+                    authorId: req.session.passport.user,
+                    authorName: req.body.name,
+                },
+                commentText: req.body.comment,
+                comments: [],
+            });
+            var index;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                }
             }
+            project.bugs[index].comments.push(newComment);
+            console.log("pcomment: ", project.bugs[index].comments);
+            console.log("bug: ", project.bugs[index]);
+            project.markModified("bugs");
+            project.save().then(res.redirect("/"));
         }
-        console.log(project)
-    })
-       
-})
+    );
+});
 
 app.post("/getProjectInfo", (req, res) => {
-    //console.log(req.body.activeTeam);
-
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
