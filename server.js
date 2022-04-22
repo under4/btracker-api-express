@@ -292,10 +292,47 @@ app.post("/postComment", (req, res) => {
                 }
             }
             project.bugs[index].comments.push(newComment);
-            console.log("pcomment: ", project.bugs[index].comments);
-            console.log("bug: ", project.bugs[index]);
             project.markModified("bugs");
             project.save().then(res.redirect("/"));
+        }
+    );
+});
+
+app.post("/postReply", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.project),
+        (err, project) => {
+            if (err) return err;
+
+            const reply = new Comment({
+                author: {
+                    authorId: req.session.passport.user,
+                    authorName: req.body.name,
+                },
+                commentText: req.body.comment,
+                comments: [],
+            });
+
+            var bIndex;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    bIndex = i;
+                }
+            }
+            function traverseComments(comments) {
+                for (let comment of comments) {
+                    if (comment.comments.length > 0) {
+                        traverseComments(comment.comments);
+                    }
+                    if (comment._id == req.body.commentId) {
+                        comment.comments.push(reply);
+                    }
+                }
+            }
+            traverseComments(project.bugs[bIndex].comments);
+
+            project.markModified("bugs");
+            project.save().then(res.json({ err: 0 }));
         }
     );
 });
