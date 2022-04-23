@@ -230,6 +230,23 @@ app.post("/createProject", (req, res) => {
     );
 });
 
+app.post("/deleteBug", (req, res) => {
+    Project.findById(req.body.project, (err, project) => {
+        if (err) return err;
+        let index;
+        for (var i = 0; i < project.bugs.length; i++) {
+            if (project.bugs[i]._id == req.body.bId) {
+                index = i;
+                i = project.bugs.kength;
+            }
+        }
+
+        project.bugs.splice(index, i);
+        project.markModified("bugs");
+        project.save().then(res.redirect("/"));
+    });
+});
+
 app.post("/postBug", (req, res) => {
     Project.findById(req.body.project, (err, project) => {
         if (err) return res.json({ err: 1 });
