@@ -122,7 +122,7 @@ app.post("/getBug", (req, res) => {
 });
 
 app.get("/getConsoleInfo", (req, res) => {
-    console.log(req);
+    //console.log(req);
     User.findById(
         mongoose.Types.ObjectId(req.session.passport.user),
         function (err, user) {
@@ -231,20 +231,25 @@ app.post("/createProject", (req, res) => {
 });
 
 app.post("/deleteBug", (req, res) => {
-    Project.findById(req.body.project, (err, project) => {
-        if (err) return err;
-        let index;
-        for (var i = 0; i < project.bugs.length; i++) {
-            if (project.bugs[i]._id == req.body.bId) {
-                index = i;
-                i = project.bugs.kength;
+    console.log(req);
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return err;
+            console.log(project);
+            let index;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                    i = project.bugs.length;
+                }
             }
-        }
 
-        project.bugs.splice(index, i);
-        project.markModified("bugs");
-        project.save().then(res.redirect("/"));
-    });
+            project.bugs.splice(index, 1);
+            project.markModified("bugs");
+            project.save().then(res.redirect("/"));
+        }
+    );
 });
 
 app.post("/postBug", (req, res) => {
