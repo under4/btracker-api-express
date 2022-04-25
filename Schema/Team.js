@@ -10,6 +10,7 @@ const TeamSchema = mongoose.Schema({
         ],
     ],
     labels: [{ name: String, color: String }],
+    feed: Array,
 });
 
 module.exports = mongoose.model("Team", TeamSchema);

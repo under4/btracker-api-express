@@ -12,10 +12,11 @@ const flash = require("express-flash");
 const session = require("express-session");
 const passport = require("passport");
 const methodOverride = require("method-override");
+const APP_URL = process.env.APP_URL;
 
 app.use(
     cors({
-        origin: process.env.APP_URL,
+        origin: APP_URL,
         credentials: true,
     })
 );
@@ -48,7 +49,6 @@ const Team = require("./Schema/Team");
 const Project = require("./Schema/Project");
 
 const initializePass = require("./passport-config");
-const { type } = require("express/lib/response");
 initializePass(
     passport,
     async (username) => {
@@ -71,7 +71,6 @@ app.get("/", (req, res) => {
     res.json({ greeting: "hello world" });
 });
 
-//new user
 app.post("/register", async (req, res) => {
     try {
         const hashedPass = bcrypt.hash(req.body.password, 10, (err, hash) => {
@@ -115,6 +114,7 @@ app.post(
 app.post("/getBug", (req, res) => {
     Project.findById(req.body.projectId, (err, project) => {
         if (err) return res.json({ err: 1 });
+
         return res.json(
             project.bugs.filter((bug) => bug._id == req.body.bugId)[0]
         );
@@ -122,7 +122,6 @@ app.post("/getBug", (req, res) => {
 });
 
 app.get("/getConsoleInfo", (req, res) => {
-    //console.log(req);
     User.findById(
         mongoose.Types.ObjectId(req.session.passport.user),
         function (err, user) {
@@ -173,7 +172,7 @@ app.post("/createTeam", (req, res) => {
             newTeam.users.push([req.session.passport.user, "lead"]);
 
             newTeam.save().then(() => {
-                res.send("success");
+                res.redirect(`${APP_URL}/console/team`);
             });
         }
     });
@@ -230,28 +229,6 @@ app.post("/createProject", (req, res) => {
     );
 });
 
-app.post("/deleteBug", (req, res) => {
-    console.log(req);
-    Project.findById(
-        mongoose.Types.ObjectId(req.body.projectId),
-        (err, project) => {
-            if (err) return err;
-            console.log(project);
-            let index;
-            for (var i = 0; i < project.bugs.length; i++) {
-                if (project.bugs[i]._id == req.body.bugId) {
-                    index = i;
-                    i = project.bugs.length;
-                }
-            }
-
-            project.bugs.splice(index, 1);
-            project.markModified("bugs");
-            project.save().then(res.redirect("/"));
-        }
-    );
-});
-
 app.post("/postBug", (req, res) => {
     Project.findById(req.body.project, (err, project) => {
         if (err) return res.json({ err: 1 });
@@ -289,8 +266,92 @@ app.post("/postBug", (req, res) => {
         });
         project.bugIdIncrementer = project.bugIdIncrementer + 1;
         project.bugs.push(newBug);
-        project.save().then(res.json({ err: 0 }));
+        project
+            .save()
+            .then(res.redirect(`${APP_URL}/console/bug/${newBug._id}`));
     });
+});
+
+app.post("/editBug", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.project),
+        (err, project) => {
+            if (err) return console.log(err);
+
+            let index;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                    i = project.bugs.length;
+                }
+            }
+
+            const labels = req.body.labels.split(",");
+            for (let i = 0; i < labels.length; i++) {
+                labels[i] = labels[i].trim();
+                if (labels[i].length < 1) {
+                    labels.splice(i, 1);
+                    i--;
+                }
+            }
+
+            project.bugs[index].bugTitle = req.body.bug;
+            project.bugs[index].description = req.body.description;
+            project.bugs[index].priority = req.body.priority;
+            project.bugs[index].labels = labels;
+            project.bugs[index].due =
+                req.body.due != "" ? req.body.due : project.bugs[index].due;
+            project.markModified("bugs");
+            project
+                .save()
+                .then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
+        }
+    );
+});
+
+app.post("/markBugComplete", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return console.log(err);
+
+            let index;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                    i = project.bugs.length;
+                }
+            }
+
+            project.bugs[index].status = "closed";
+            project.markModified("bugs");
+            project
+                .save()
+                .then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
+        }
+    );
+});
+
+app.post("/deleteBug", (req, res) => {
+    console.log(req);
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return err;
+            console.log(project);
+            let index;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                    i = project.bugs.length;
+                }
+            }
+
+            project.bugs.splice(index, 1);
+            project.markModified("bugs");
+            project.save().then(res.redirect(`${APP_URL}/console`));
+        }
+    );
 });
 
 app.post("/postComment", (req, res) => {
@@ -315,7 +376,9 @@ app.post("/postComment", (req, res) => {
             }
             project.bugs[index].comments.push(newComment);
             project.markModified("bugs");
-            project.save().then(res.redirect("/"));
+            project
+                .save()
+                .then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
         }
     );
 });
@@ -354,7 +417,13 @@ app.post("/postReply", (req, res) => {
             traverseComments(project.bugs[bIndex].comments);
 
             project.markModified("bugs");
-            project.save().then(res.json({ err: 0 }));
+            project
+                .save()
+                .then(
+                    res.json(
+                        res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`)
+                    )
+                );
         }
     );
 });

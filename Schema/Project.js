@@ -5,6 +5,7 @@ const ProjectSchema = mongoose.Schema({
     team: { type: mongoose.SchemaTypes.ObjectId },
     projectIdentifier: String,
     bugs: Array,
+    //archivedBugs: Array,
     bugIdIncrementer: { type: Number, default: 100 },
 });
 

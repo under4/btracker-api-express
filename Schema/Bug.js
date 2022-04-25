@@ -10,9 +10,10 @@ const BugSchema = mongoose.Schema({
     labels: [{ labelText: String, colorValue: String }],
     comments: [],
     assigned: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],
-    //followedBy: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],
+    followedBy: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],
     due: { type: Date },
     postDate: { type: Date, default: Date.now() },
+    closeDate: { type: Date, default: Date.now() },
 });
 
 module.exports = mongoose.model("Bug", BugSchema);
