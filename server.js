@@ -264,11 +264,27 @@ app.post("/postBug", (req, res) => {
             status: "open",
             due: due,
         });
-        project.bugIdIncrementer = project.bugIdIncrementer + 1;
-        project.bugs.push(newBug);
-        project
-            .save()
-            .then(res.redirect(`${APP_URL}/console/bug/${newBug._id}`));
+
+        Team.findById(mongoose.Types.ObjectId(project.team), (err, team)=>{
+            console.log(team);
+            if(err) return err;
+            team.feed.unshift({
+                feedText: `A new bug has been posted by ${req.body.name}`,
+                date: new Date(),
+                source: {sourceString: project.name, sourceId: project._id}
+            })
+
+            team.markModified("feed");
+            team.save()
+
+            project.bugIdIncrementer = project.bugIdIncrementer + 1;
+            project.bugs.push(newBug);
+            project
+                .save()
+                .then(res.redirect(`${APP_URL}/console/bug/${newBug._id}`));
+        })
+
+        
     });
 });
 
@@ -302,9 +318,24 @@ app.post("/editBug", (req, res) => {
             project.bugs[index].due =
                 req.body.due != "" ? req.body.due : project.bugs[index].due;
             project.markModified("bugs");
-            project
+
+            Team.findById(mongoose.Types.ObjectId(req.body.team), (err, team)=>{
+                if(err) return err;
+                team.feed.unshift({
+                    feedText: `A new bug has been posted by ${req.body.state.usrName}`,
+                    date: new Date(),
+                    source: {sourceString: project.name, sourceId: project._id}
+                })
+                
+                team.markModified("feed");
+                team.save()
+
+                project
                 .save()
                 .then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
+            })
+
+            
         }
     );
 });
@@ -323,17 +354,30 @@ app.post("/markBugComplete", (req, res) => {
                 }
             }
 
-            project.bugs[index].status = "closed";
-            project.markModified("bugs");
-            project
-                .save()
-                .then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
+            Team.findById(mongoose.Types.ObjectId(req.body.team), (err, team)=>{
+                if(err) return err;
+                team.feed.unshift({
+                    feedText: `${req.body.bugId} has been closed by ${req.body.state.usrName}`,
+                    date: new Date(),
+                    source: {sourceString: project.name, sourceId: project._id}
+                })
+
+                team.markModified("feed");
+                team.save()
+
+                project.bugs[index].status = "closed";
+                project.markModified("bugs");
+                project
+                    .save()
+                    .then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
+            })
+            
         }
     );
 });
 
 app.post("/deleteBug", (req, res) => {
-    console.log(req);
+    console.log(req.body);
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
@@ -346,10 +390,22 @@ app.post("/deleteBug", (req, res) => {
                     i = project.bugs.length;
                 }
             }
+            Team.findById(mongoose.Types.ObjectId(req.body.team), (err, team)=>{
+                if(err) return err;
+                team.feed.unshift({
+                    feedText: `${req.body.bugId} has been deleted by ${req.body.state.usrName}`,
+                    date: new Date(),
+                    source: {sourceString: project.name, sourceId: project._id}
+                })
 
-            project.bugs.splice(index, 1);
-            project.markModified("bugs");
-            project.save().then(res.redirect(`${APP_URL}/console`));
+                team.markModified("feed");
+                team.save()
+
+                project.bugs.splice(index, 1);
+                project.markModified("bugs");
+                project.save().then(res.redirect(`${APP_URL}/console`));
+            })
+            
         }
     );
 });
@@ -374,6 +430,7 @@ app.post("/postComment", (req, res) => {
                     index = i;
                 }
             }
+
             project.bugs[index].comments.push(newComment);
             project.markModified("bugs");
             project
@@ -433,7 +490,7 @@ app.post("/getProjectInfo", (req, res) => {
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
             if (err) return err;
-
+            
             if (req.body.activeTeam == project.team) return res.json(project);
 
             Team.findById(
