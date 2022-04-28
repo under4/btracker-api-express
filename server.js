@@ -493,7 +493,7 @@ app.post("/postComment", (req, res) => {
 });
 
 app.post("/darkMode", (req, res) => {
-    User.findById(mongoose.Types.ObjectId(req.body.userId), (err, user) => {
+    User.findById(mongoose.Types.ObjectId(req.session.passport.user), (err, user) => {
         if(err) return console.log(err);
 
         user.settings.darkTheme = req.body.darkTheme;
