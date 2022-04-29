@@ -67,6 +67,10 @@ const db = mongoose.connect(dbKey, () => {
     console.log("connected to database");
 });
 
+const random = (max) => {
+    return Math.floor(Math.random() * (max + 1));
+};
+
 app.get("/", (req, res) => {
     res.json({ greeting: "hello world" });
 });
@@ -259,7 +263,7 @@ app.post("/postBug", (req, res) => {
             },
             bugTitle: req.body.bug,
             description: req.body.description,
-            labels: labels,
+            labels: [],
             priority: req.body.priority,
             status: "open",
             due: due,
@@ -274,6 +278,26 @@ app.post("/postBug", (req, res) => {
                 source: { sourceString: project.name, sourceId: project._id },
             });
 
+            const labels = req.body.labels.split(",");
+            for (let i = 0; i < labels.length; i++) {
+                labels[i] = labels[i].trim();
+                if (labels[i].length < 1) {
+                    labels.splice(i, 1);
+                    i--;
+                }
+            }
+            let resLabels = [];
+            for (let label of labels) {
+                if (!team.labels[label]) {
+                    team.labels[label] = `rgb(${random(150)}, ${random(
+                        150
+                    )}, ${random(150)})`;
+                }
+                resLabels.push([label, team.labels[label]]);
+            }
+            newBug.labels = resLabels;
+
+            team.markModified("labels");
             team.markModified("feed");
             team.save();
 
@@ -300,29 +324,18 @@ app.post("/editBug", (req, res) => {
                 }
             }
 
-            const labels = req.body.labels.split(",");
-            for (let i = 0; i < labels.length; i++) {
-                labels[i] = labels[i].trim();
-                if (labels[i].length < 1) {
-                    labels.splice(i, 1);
-                    i--;
-                }
-            }
-
             project.bugs[index].bugTitle = req.body.bug;
             project.bugs[index].description = req.body.description;
             project.bugs[index].priority = req.body.priority;
-            project.bugs[index].labels = labels;
             project.bugs[index].due =
                 req.body.due != "" ? req.body.due : project.bugs[index].due;
-            project.markModified("bugs");
 
             Team.findById(
-                mongoose.Types.ObjectId(req.body.team),
+                mongoose.Types.ObjectId(project.team),
                 (err, team) => {
                     if (err) return err;
                     team.feed.unshift({
-                        feedText: `${project.bugs[index].bugId} has been edited by ${req.body.state.usrName}`,
+                        feedText: `${project.bugs[index].bugId} has been edited by ${req.body.name}`,
                         date: new Date(),
                         source: {
                             sourceString: project.name,
@@ -330,6 +343,28 @@ app.post("/editBug", (req, res) => {
                         },
                     });
 
+                    //update labels
+
+                    const labels = req.body.labels.split(",");
+                    for (let i = 0; i < labels.length; i++) {
+                        labels[i] = labels[i].trim();
+                        if (labels[i].length < 1) {
+                            labels.splice(i, 1);
+                            i--;
+                        }
+                    }
+                    let resLabels = [];
+                    for (let label of labels) {
+                        if (!team.labels[label]) {
+                            team.labels[label] = `rgb(${random(150)}, ${random(
+                                150
+                            )}, ${random(150)})`;
+                        }
+                        resLabels.push([label, team.labels[label]]);
+                    }
+                    project.bugs[index].labels = resLabels;
+
+                    team.markModified("labels");
                     team.markModified("feed");
                     project.markModified("bugs");
                     team.save().then(
@@ -493,13 +528,16 @@ app.post("/postComment", (req, res) => {
 });
 
 app.post("/darkMode", (req, res) => {
-    User.findById(mongoose.Types.ObjectId(req.session.passport.user), (err, user) => {
-        if(err) return console.log(err);
+    User.findById(
+        mongoose.Types.ObjectId(req.session.passport.user),
+        (err, user) => {
+            if (err) return console.log(err);
 
-        user.settings.darkTheme = req.body.darkTheme;
-        user.save()
-    })
-})
+            user.settings.darkTheme = req.body.darkTheme;
+            user.save();
+        }
+    );
+});
 
 app.post("/postReply", (req, res) => {
     Project.findById(

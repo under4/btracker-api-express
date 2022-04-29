@@ -8,6 +8,7 @@ const BugSchema = mongoose.Schema({
     description: String,
     status: String,
     labels: [{ labelText: String, colorValue: String }],
+    numOfComments: { type: Number, default: 0 },
     comments: [],
     assigned: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],
     followedBy: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],

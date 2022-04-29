@@ -9,8 +9,14 @@ const TeamSchema = mongoose.Schema({
             { type: mongoose.SchemaTypes.ObjectId, ref: "Project" },
         ],
     ],
-    labels: [{ name: String, color: String }],
-    feed: [{feedText:String, date:Date, source:{id:mongoose.Types.ObjectId, sourceString:String}}],
+    labels: {},
+    feed: [
+        {
+            feedText: String,
+            date: Date,
+            source: { id: mongoose.Types.ObjectId, sourceString: String },
+        },
+    ],
 });
 
 module.exports = mongoose.model("Team", TeamSchema);
