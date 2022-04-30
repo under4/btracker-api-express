@@ -276,6 +276,7 @@ app.post("/postBug", (req, res) => {
                 feedText: `A new bug has been posted by ${req.body.name}`,
                 date: new Date(),
                 source: { sourceString: project.name, sourceId: project._id },
+                type: "new",
             });
 
             const labels = req.body.labels.split(",");
@@ -341,6 +342,7 @@ app.post("/editBug", (req, res) => {
                             sourceString: project.name,
                             sourceId: project._id,
                         },
+                        type: "edit",
                     });
 
                     //update labels
@@ -403,6 +405,7 @@ app.post("/markBugComplete", (req, res) => {
                             sourceString: project.name,
                             sourceId: project._id,
                         },
+                        type: "close",
                     });
 
                     team.markModified("feed");
@@ -445,6 +448,7 @@ app.post("/openBug", (req, res) => {
                             sourceString: project.name,
                             sourceId: project._id,
                         },
+                        type: "open",
                     });
 
                     team.markModified("feed");
