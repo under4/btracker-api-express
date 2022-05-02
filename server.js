@@ -85,14 +85,14 @@ app.post("/register", async (req, res) => {
                 if (err) {
                     return console.log(err);
                 }
-                console.log(hash);
+                //console.log(hash);
                 if (data == null) {
                     const newUser = new User({
                         name: req.body.name,
                         username: req.body.email,
                         password: hash,
                     });
-                    console.log(newUser);
+                    //console.log(newUser);
                     newUser.save().then(() => {
                         res.send("success");
                     });
@@ -237,15 +237,6 @@ app.post("/postBug", (req, res) => {
     Project.findById(req.body.project, (err, project) => {
         if (err) return res.json({ err: 1 });
 
-        const labels = req.body.labels.split(",");
-        for (let i = 0; i < labels.length; i++) {
-            labels[i] = labels[i].trim();
-            if (labels[i].length < 1) {
-                labels.splice(i, 1);
-                i--;
-            }
-        }
-
         var due = req.body.due;
         if (due == "") {
             due = new Date();
@@ -263,20 +254,20 @@ app.post("/postBug", (req, res) => {
             },
             bugTitle: req.body.bug,
             description: req.body.description,
-            labels: [],
             priority: req.body.priority,
             status: "open",
             due: due,
         });
 
         Team.findById(mongoose.Types.ObjectId(project.team), (err, team) => {
-            console.log(team);
+            //console.log(team);
             if (err) return err;
             team.feed.unshift({
                 feedText: `A new bug has been posted by ${req.body.name}`,
                 date: new Date(),
                 source: { sourceString: project.name, sourceId: project._id },
-                type: "new",
+                feedType: "new",
+                closeDate: null,
             });
 
             const labels = req.body.labels.split(",");
@@ -287,6 +278,7 @@ app.post("/postBug", (req, res) => {
                     i--;
                 }
             }
+
             let resLabels = [];
             for (let label of labels) {
                 if (!team.labels[label]) {
@@ -297,7 +289,6 @@ app.post("/postBug", (req, res) => {
                 resLabels.push([label, team.labels[label]]);
             }
             newBug.labels = resLabels;
-
             team.markModified("labels");
             team.markModified("feed");
             team.save();
@@ -342,7 +333,7 @@ app.post("/editBug", (req, res) => {
                             sourceString: project.name,
                             sourceId: project._id,
                         },
-                        type: "edit",
+                        feedType: "edit",
                     });
 
                     //update labels
@@ -364,6 +355,7 @@ app.post("/editBug", (req, res) => {
                         }
                         resLabels.push([label, team.labels[label]]);
                     }
+
                     project.bugs[index].labels = resLabels;
 
                     team.markModified("labels");
@@ -405,11 +397,12 @@ app.post("/markBugComplete", (req, res) => {
                             sourceString: project.name,
                             sourceId: project._id,
                         },
-                        type: "close",
+                        feedType: "close",
                     });
 
                     team.markModified("feed");
                     project.bugs[index].status = "closed";
+                    project.bugs[index].closeDate = Date(Date.now());
                     project.markModified("bugs");
                     team.save().then(
                         project
@@ -435,7 +428,6 @@ app.post("/openBug", (req, res) => {
                     i = project.bugs.length;
                 }
             }
-            console.log(req.body);
             console.log(project.bugs[index]);
             Team.findById(
                 mongoose.Types.ObjectId(project.team),
@@ -448,7 +440,7 @@ app.post("/openBug", (req, res) => {
                             sourceString: project.name,
                             sourceId: project._id,
                         },
-                        type: "open",
+                        feedType: "open",
                     });
 
                     team.markModified("feed");
@@ -466,7 +458,7 @@ app.post("/openBug", (req, res) => {
 });
 
 app.post("/deleteBug", (req, res) => {
-    console.log(req.body);
+    //console.log(req.body);
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
@@ -484,13 +476,16 @@ app.post("/deleteBug", (req, res) => {
                 (err, team) => {
                     if (err) return err;
                     team.feed.unshift({
-                        feedText: `${req.body.bugId} has been deleted by ${req.body.state.usrName}`,
+                        feedText: `${project.bugs[index].bugId} has been deleted by ${req.body.state.usrName}`,
                         date: new Date(),
                         source: {
                             sourceString: project.name,
                             sourceId: project._id,
                         },
+                        feedType: "delete",
                     });
+
+                    project.bugs.splice(index, 1);
 
                     team.markModified("feed");
                     project.markModified("bugs");
@@ -612,8 +607,6 @@ app.delete("/logout", (req, res) => {
 });
 
 app.get("/auth", (req, res) => {
-    //console.log("isAuthenticated(): ", req.isAuthenticated());
-
     if (req.isAuthenticated()) {
         return res.json({ err: 0 });
     } else {

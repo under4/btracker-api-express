@@ -15,6 +15,7 @@ const TeamSchema = mongoose.Schema({
             feedText: String,
             date: Date,
             source: { id: mongoose.Types.ObjectId, sourceString: String },
+            feedType: String,
         },
     ],
 });

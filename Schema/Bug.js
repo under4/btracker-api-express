@@ -7,7 +7,7 @@ const BugSchema = mongoose.Schema({
     priority: { type: String, required: true },
     description: String,
     status: String,
-    labels: [{ labelText: String, colorValue: String }],
+    labels: [],
     numOfComments: { type: Number, default: 0 },
     comments: [],
     assigned: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],
@@ -15,6 +15,8 @@ const BugSchema = mongoose.Schema({
     due: { type: Date },
     postDate: { type: Date, default: Date.now() },
     closeDate: { type: Date, default: Date.now() },
+    thumbnail: String,
+    picrures: [String],
 });
 
 module.exports = mongoose.model("Bug", BugSchema);
