@@ -269,6 +269,9 @@ app.post("/postBug", (req, res) => {
                 feedType: "new",
                 closeDate: null,
             });
+            if (team.feed.length < 100) {
+                team.feed.splice(100, 1);
+            }
 
             const labels = req.body.labels.split(",");
             for (let i = 0; i < labels.length; i++) {
@@ -279,16 +282,18 @@ app.post("/postBug", (req, res) => {
                 }
             }
 
-            let resLabels = [];
             for (let label of labels) {
                 if (!team.labels[label]) {
                     team.labels[label] = `rgb(${random(150)}, ${random(
                         150
                     )}, ${random(150)})`;
                 }
-                resLabels.push([label, team.labels[label]]);
             }
-            newBug.labels = resLabels;
+            if (team.feed.length < 100) {
+                team.feed.splice(100, 1);
+            }
+
+            newBug.labels = labels;
             team.markModified("labels");
             team.markModified("feed");
             team.save();
@@ -335,7 +340,9 @@ app.post("/editBug", (req, res) => {
                         },
                         feedType: "edit",
                     });
-
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
                     //update labels
 
                     const labels = req.body.labels.split(",");
@@ -346,26 +353,23 @@ app.post("/editBug", (req, res) => {
                             i--;
                         }
                     }
-                    let resLabels = [];
                     for (let label of labels) {
                         if (!team.labels[label]) {
                             team.labels[label] = `rgb(${random(150)}, ${random(
                                 150
                             )}, ${random(150)})`;
                         }
-                        resLabels.push([label, team.labels[label]]);
+                    }
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
                     }
 
-                    project.bugs[index].labels = resLabels;
+                    project.bugs[index].labels = labels;
 
                     team.markModified("labels");
                     team.markModified("feed");
                     project.markModified("bugs");
-                    team.save().then(
-                        project
-                            .save()
-                            .then(res.json({ link: `${APP_URL}/console` }))
-                    );
+                    team.save().then(project.save().then(res.send("success")));
                 }
             );
         }
@@ -399,16 +403,57 @@ app.post("/markBugComplete", (req, res) => {
                         },
                         feedType: "close",
                     });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
 
                     team.markModified("feed");
                     project.bugs[index].status = "closed";
                     project.bugs[index].closeDate = Date(Date.now());
                     project.markModified("bugs");
-                    team.save().then(
-                        project
-                            .save()
-                            .then(res.json({ link: `${APP_URL}/console` }))
-                    );
+                    team.save().then(project.save().then(res.send("success")));
+                }
+            );
+        }
+    );
+});
+
+app.post("/markBugOngoing", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return console.log(err);
+
+            let index;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                    i = project.bugs.length;
+                }
+            }
+
+            Team.findById(
+                mongoose.Types.ObjectId(project.team),
+                (err, team) => {
+                    if (err) return err;
+                    team.feed.unshift({
+                        feedText: `${project.bugs[index].bugId} has been marked Ongoing by ${req.body.state.usrName}`,
+                        date: new Date(),
+                        source: {
+                            sourceString: project.name,
+                            sourceId: project._id,
+                        },
+                        feedType: "ongoing",
+                    });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
+
+                    team.markModified("feed");
+                    project.bugs[index].status = "ongoing";
+                    project.bugs[index].closeDate = Date(Date.now());
+                    project.markModified("bugs");
+                    team.save().then(project.save().then(res.send("success")));
                 }
             );
         }
@@ -442,15 +487,89 @@ app.post("/openBug", (req, res) => {
                         },
                         feedType: "open",
                     });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
 
                     team.markModified("feed");
                     project.bugs[index].status = "open";
                     project.markModified("bugs");
-                    team.save().then(
-                        project
-                            .save()
-                            .then(res.json({ link: `${APP_URL}/console` }))
-                    );
+                    team.save().then(project.save().then(res.send("success")));
+                }
+            );
+        }
+    );
+});
+
+app.post("/commit", (req, res) => {
+    let open = 0;
+    let close = 0;
+    let ongoing = 0;
+    let inReview = 0;
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return console.log(err);
+            for (let change of req.body.changes) {
+                let index;
+                for (var i = 0; i < project.bugs.length; i++) {
+                    if (project.bugs[i]._id == change[0]) {
+                        index = i;
+                        i = project.bugs.length;
+                    }
+                }
+                switch (change[1]) {
+                    case "openBugs":
+                        open++;
+                        project.bugs[index].status = "open";
+                        break;
+                    case "closeBugs":
+                        close++;
+                        project.bugs[index].status = "closed";
+                        break;
+                    case "ongoingBugs":
+                        ongoing++;
+                        project.bugs[index].status = "ongoing";
+                        break;
+                    case "inReview":
+                        inReview++;
+                        project.bugs[index].status = "inReview";
+                        break;
+                }
+            }
+
+            const feedTextFunction = function () {
+                let openText = open > 0 ? `Opened ${open} ` : "";
+                let closeText = close > 0 ? `Closed ${close} ` : "";
+                let ongoingText =
+                    ongoing > 0 ? `marked Ongoing ${ongoing} ` : "";
+                let inReviewText =
+                    inReview > 0 ? `marked to Review ${inReview} ` : "";
+                return openText + closeText + ongoingText + inReviewText;
+            };
+
+            const feedText = feedTextFunction();
+
+            Team.findById(
+                mongoose.Types.ObjectId(project.team),
+                (err, team) => {
+                    if (err) return err;
+                    team.feed.unshift({
+                        feedText: `${req.body.state.usrName} has ${feedText} bugs`,
+                        date: new Date(),
+                        source: {
+                            sourceString: project.name,
+                            sourceId: project._id,
+                        },
+                        feedType: "change",
+                    });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
+
+                    team.markModified("feed");
+                    project.markModified("bugs");
+                    team.save().then(project.save().then(res.send("success")));
                 }
             );
         }
@@ -458,7 +577,6 @@ app.post("/openBug", (req, res) => {
 });
 
 app.post("/deleteBug", (req, res) => {
-    //console.log(req.body);
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
@@ -484,6 +602,9 @@ app.post("/deleteBug", (req, res) => {
                         },
                         feedType: "delete",
                     });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
 
                     project.bugs.splice(index, 1);
 
@@ -521,7 +642,7 @@ app.post("/postComment", (req, res) => {
 
             project.bugs[index].comments.push(newComment);
             project.markModified("bugs");
-            project.save().then(res.json({ link: `${APP_URL}/console` }));
+            project.save().then(res.send("success"));
         }
     );
 });
@@ -572,13 +693,7 @@ app.post("/postReply", (req, res) => {
             traverseComments(project.bugs[bIndex].comments);
 
             project.markModified("bugs");
-            project
-                .save()
-                .then(
-                    res.json(
-                        res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`)
-                    )
-                );
+            project.save().then(res.send("success"));
         }
     );
 });

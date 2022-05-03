@@ -18,6 +18,9 @@ const TeamSchema = mongoose.Schema({
             feedType: String,
         },
     ],
+    settings: {
+        daysToArchive: { type: Number, default: 7 },
+    },
 });
 
 module.exports = mongoose.model("Team", TeamSchema);
