@@ -12,6 +12,7 @@ const flash = require("express-flash");
 const session = require("express-session");
 const passport = require("passport");
 const methodOverride = require("method-override");
+const { cloudinary } = require("./utils/cloudinary");
 const APP_URL = process.env.APP_URL;
 
 app.use(
@@ -20,8 +21,8 @@ app.use(
         credentials: true,
     })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: false }));
 app.use(flash());
 app.use(
     session({
