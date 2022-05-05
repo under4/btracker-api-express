@@ -309,6 +309,7 @@ app.post("/postBug", (req, res) => {
 });
 
 app.post("/editBug", (req, res) => {
+    console.log(req.body)
     Project.findById(
         mongoose.Types.ObjectId(req.body.project),
         (err, project) => {
@@ -460,6 +461,19 @@ app.post("/markBugOngoing", (req, res) => {
         }
     );
 });
+
+
+app.post("/uploadImage", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return console.log(err);
+            
+            
+        }
+    );
+});
+
 
 app.post("/openBug", (req, res) => {
     Project.findById(
