@@ -466,9 +466,27 @@ app.post("/markBugOngoing", (req, res) => {
 app.post("/uploadImage", (req, res) => {
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
-        (err, project) => {
+        async (err, project) => {
             if (err) return console.log(err);
-            
+            let index;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                    i = project.bugs.length;
+                }
+            }
+            try {
+                const uploadedResponse = await cloudinary.uploader.upload(req.body.data, {upload_preset: "btracker_upload"})
+                console.log(uploadedResponse)
+                console.log(project.bugs[index].pictures)
+                if(project.bugs[index].pictures == undefined) {project.bugs[index].pictures = []}
+                project.bugs[index].pictures.push(uploadedResponse.url)
+                
+                project.markModified("bugs");
+                project.save().then(res.redirect(`${APP_URL}/console/${req.body.bugId}`))
+            } catch (e){
+                console.error(e)
+            }
             
         }
     );

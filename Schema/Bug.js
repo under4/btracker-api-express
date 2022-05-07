@@ -15,7 +15,7 @@ const BugSchema = mongoose.Schema({
     due: { type: Date },
     postDate: { type: Date, default: Date.now() },
     closeDate: { type: Date, default: Date.now() },
-    pictures: [String],
+    pictures: [],
 });
 
 module.exports = mongoose.model("Bug", BugSchema);
