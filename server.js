@@ -21,8 +21,8 @@ app.use(
         credentials: true,
     })
 );
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: false }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: false }));
 app.use(flash());
 app.use(
     session({
@@ -126,6 +126,17 @@ app.post("/getBug", (req, res) => {
     });
 });
 
+app.post("/getArchivedBug", (req, res) => {
+    console.log(req.body)
+    Project.findById(req.body.projectId, (err, project) => {
+        if (err) return res.json({ err: 1 });
+        
+        return res.json(
+            project.archivedBugs.filter((bug) => bug._id == req.body.bugId)[0]
+        );
+    });
+});
+
 app.get("/getConsoleInfo", (req, res) => {
     User.findById(
         mongoose.Types.ObjectId(req.session.passport.user),
@@ -141,7 +152,6 @@ app.get("/getConsoleInfo", (req, res) => {
                             err: 1,
                             message: "an error occured",
                         });
-
                     res.json({ user: user, team: team });
                 }
             );
@@ -278,7 +288,7 @@ app.post("/postBug", (req, res) => {
                 closeDate: null,
             });
             if (team.feed.length < 100) {
-                team.feed.splice(100, 1);
+                team.feed.splice(100, team.feed.length-100);
             }
 
             const labels = req.body.labels.split(",");
@@ -316,6 +326,61 @@ app.post("/postBug", (req, res) => {
         });
     });
 });
+
+app.post('/getArchivedBugs', function(req, res) {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.project),
+        (err, project) => {
+            if (err) return console.log(err);
+            res.json({bugs: project.archivedBugs})
+        }
+    ); 
+})
+
+app.post("/archive", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.project),
+        (err, project) => {
+            if (err) return console.log(err);
+
+            let index;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                    i = project.bugs.length;
+                }
+            }
+            project.bugs[index].status == "closed"
+
+            Team.findById(
+                mongoose.Types.ObjectId(project.team),
+                (err, team) => {
+                    if (err) return err;
+                    team.feed.unshift({
+                        feedText: `${project.bugs[index].bugId} has been archived by ${req.body.name}`,
+                        date: new Date(),
+                        source: {
+                            sourceString: project.name,
+                            sourceId: project._id,
+                        },
+                        feedType: "edit",
+                    });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
+
+                    project.bugs[index].labels = labels;
+
+                    team.markModified("labels");
+                    team.markModified("feed");
+                    project.markModified("bugs");
+                    project.markModified("archivedBugs");
+                    team.save().then(project.save().then(res.redirect(`${APP_URL}/console/archive`)));
+                }
+            );
+        }
+    ); 
+})
 
 app.post("/editBug", (req, res) => {
     Project.findById(
@@ -358,7 +423,7 @@ app.post("/editBug", (req, res) => {
                         feedType: "edit",
                     });
                     if (team.feed.length < 100) {
-                        team.feed.splice(100, 1);
+                        team.feed.splice(100, team.feed.length-100);
                     }
                     //update labels
 
@@ -387,7 +452,7 @@ app.post("/editBug", (req, res) => {
                     team.markModified("feed");
                     project.markModified("bugs");
                     project.markModified("archivedBugs");
-                    team.save().then(project.save().then(res.send("success")));
+                    team.save().then(project.save().then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`)));
                 }
             );
         }
@@ -471,7 +536,7 @@ app.post("/markBugOngoing", (req, res) => {
                     project.bugs[index].status = "ongoing";
                     project.bugs[index].closeDate = Date(Date.now());
                     project.markModified("bugs");
-                    team.save().then(project.save().then(res.send("success")));
+                    team.save().then(project.save().then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`)));
                 }
             );
         }
@@ -560,7 +625,7 @@ app.post("/openBug", (req, res) => {
                     team.markModified("feed");
                     project.bugs[index].status = "open";
                     project.markModified("bugs");
-                    team.save().then(project.save().then(res.send("success")));
+                    team.save().then(project.save().then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`)));
                 }
             );
         }
@@ -592,6 +657,7 @@ app.post("/commit", (req, res) => {
                     case "closeBugs":
                         close++;
                         project.bugs[index].status = "closed";
+                        project.bugs[index].closeDate = new Date(Date.now());
                         break;
                     case "ongoingBugs":
                         ongoing++;
@@ -635,7 +701,7 @@ app.post("/commit", (req, res) => {
 
                     team.markModified("feed");
                     project.markModified("bugs");
-                    team.save().then(project.save().then(res.send("success")));
+                    team.save().then(project.save().then(res.redirect(`${APP_URL}/console/bugs`)));
                 }
             );
         }
@@ -708,7 +774,7 @@ app.post("/postComment", (req, res) => {
 
             project.bugs[index].comments.push(newComment);
             project.markModified("bugs");
-            project.save().then(res.send("success"));
+            project.save().then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
         }
     );
 });
@@ -759,7 +825,7 @@ app.post("/postReply", (req, res) => {
             traverseComments(project.bugs[bIndex].comments);
 
             project.markModified("bugs");
-            project.save().then(res.send("success"));
+            project.save().then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
         }
     );
 });
