@@ -244,6 +244,13 @@ app.post("/postBug", (req, res) => {
             due = new Date(due.setDate(due.getDate() + 7));
         }
 
+        for (var i = 0; i < project.bugs.length; i++) {
+            if(project.bugs[i].closeDate < Date.now() - 1000 * 60 * 60 * 24 * 7 && project.bugs[i].status === 'closed'){
+                if(project.archivedBugs){project.archivedBugs = []}
+                project.archivedBugs.push(project.bugs.splice(i, 1));
+            }
+        }
+
         const bugId =
             project.projectIdentifier + "-" + project.bugIdIncrementer;
 
@@ -295,6 +302,8 @@ app.post("/postBug", (req, res) => {
             }
 
             newBug.labels = labels;
+            project.markModified("bugs");
+            project.markModified("archivedBugs");
             team.markModified("labels");
             team.markModified("feed");
             team.save();
@@ -309,11 +318,17 @@ app.post("/postBug", (req, res) => {
 });
 
 app.post("/editBug", (req, res) => {
-    console.log(req.body)
     Project.findById(
         mongoose.Types.ObjectId(req.body.project),
         (err, project) => {
             if (err) return console.log(err);
+
+            for (var i = 0; i < project.bugs.length; i++) {
+                if(project.bugs[i].closeDate < Date.now() - 1000 * 60 * 60 * 24 * 7 && project.bugs[i].status === 'closed'){
+                    if(project.archivedBugs){project.archivedBugs = []}
+                    project.archivedBugs.push(project.bugs.splice(i, 1));
+                }
+            }
 
             let index;
             for (var i = 0; i < project.bugs.length; i++) {
@@ -371,6 +386,7 @@ app.post("/editBug", (req, res) => {
                     team.markModified("labels");
                     team.markModified("feed");
                     project.markModified("bugs");
+                    project.markModified("archivedBugs");
                     team.save().then(project.save().then(res.send("success")));
                 }
             );
@@ -462,6 +478,23 @@ app.post("/markBugOngoing", (req, res) => {
     );
 });
 
+app.post("/changeAvatar", (req, res) => {
+    User.findById(
+        mongoose.Types.ObjectId(req.body.user),
+        async (err, user) => {
+            console.log(user)
+            if (err) return console.log(err);
+            try {
+                const uploadedResponse = await cloudinary.uploader.upload(req.body.data, {upload_preset: "btracker_upload_avatar"})
+                user.avatarURL = uploadedResponse.url
+                user.save().then(res.redirect(`${APP_URL}/console/settings`))
+            } catch (e){
+                console.error(e)
+            }
+            
+        }
+    );
+});
 
 app.post("/uploadImage", (req, res) => {
     Project.findById(
