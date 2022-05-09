@@ -127,10 +127,12 @@ app.post("/getBug", (req, res) => {
 });
 
 app.post("/getArchivedBug", (req, res) => {
-    console.log(req.body)
+    console.log(req.body);
     Project.findById(req.body.projectId, (err, project) => {
         if (err) return res.json({ err: 1 });
-        
+        if (project.archivedBugs.length == 0) {
+            return res.json({ error: 1 });
+        }
         return res.json(
             project.archivedBugs.filter((bug) => bug._id == req.body.bugId)[0]
         );
@@ -255,9 +257,15 @@ app.post("/postBug", (req, res) => {
         }
 
         for (var i = 0; i < project.bugs.length; i++) {
-            if(project.bugs[i].closeDate < Date.now() - 1000 * 60 * 60 * 24 * 7 && project.bugs[i].status === 'closed'){
-                if(project.archivedBugs){project.archivedBugs = []}
-                project.archivedBugs.push(project.bugs.splice(i, 1));
+            if (
+                project.bugs[i].closeDate <
+                    Date.now() - 1000 * 60 * 60 * 24 * 3 &&
+                project.bugs[i].status === "archived"
+            ) {
+                if (project.archivedBugs) {
+                    project.archivedBugs = [];
+                }
+                project.archivedBugs.push(project.bugs.splice(i, 1)[0]);
             }
         }
 
@@ -288,7 +296,7 @@ app.post("/postBug", (req, res) => {
                 closeDate: null,
             });
             if (team.feed.length < 100) {
-                team.feed.splice(100, team.feed.length-100);
+                team.feed.splice(100, team.feed.length - 100);
             }
 
             const labels = req.body.labels.split(",");
@@ -327,19 +335,20 @@ app.post("/postBug", (req, res) => {
     });
 });
 
-app.post('/getArchivedBugs', function(req, res) {
+app.post("/getArchivedBugs", function (req, res) {
     Project.findById(
         mongoose.Types.ObjectId(req.body.project),
         (err, project) => {
             if (err) return console.log(err);
-            res.json({bugs: project.archivedBugs})
+            res.json({ bugs: project.archivedBugs });
         }
-    ); 
-})
+    );
+});
 
 app.post("/archive", (req, res) => {
+    console.log(req.body);
     Project.findById(
-        mongoose.Types.ObjectId(req.body.project),
+        mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
             if (err) return console.log(err);
 
@@ -350,7 +359,8 @@ app.post("/archive", (req, res) => {
                     i = project.bugs.length;
                 }
             }
-            project.bugs[index].status == "closed"
+            project.bugs[index].status = "archived";
+            project.archivedBugs.push(project.bugs.splice(index, 1)[0]);
 
             Team.findById(
                 mongoose.Types.ObjectId(project.team),
@@ -368,19 +378,19 @@ app.post("/archive", (req, res) => {
                     if (team.feed.length < 100) {
                         team.feed.splice(100, 1);
                     }
-
-                    project.bugs[index].labels = labels;
-
-                    team.markModified("labels");
                     team.markModified("feed");
                     project.markModified("bugs");
                     project.markModified("archivedBugs");
-                    team.save().then(project.save().then(res.redirect(`${APP_URL}/console/archive`)));
+                    team.save().then(
+                        project
+                            .save()
+                            .then(res.redirect(`${APP_URL}/console/archive`))
+                    );
                 }
             );
         }
-    ); 
-})
+    );
+});
 
 app.post("/editBug", (req, res) => {
     Project.findById(
@@ -389,9 +399,15 @@ app.post("/editBug", (req, res) => {
             if (err) return console.log(err);
 
             for (var i = 0; i < project.bugs.length; i++) {
-                if(project.bugs[i].closeDate < Date.now() - 1000 * 60 * 60 * 24 * 7 && project.bugs[i].status === 'closed'){
-                    if(project.archivedBugs){project.archivedBugs = []}
-                    project.archivedBugs.push(project.bugs.splice(i, 1));
+                if (
+                    project.bugs[i].closeDate <
+                        Date.now() - 1000 * 60 * 60 * 24 * 3 &&
+                    project.bugs[i].status === "closed"
+                ) {
+                    if (project.archivedBugs) {
+                        project.archivedBugs = [];
+                    }
+                    project.archivedBugs.push(project.bugs.splice(i, 1)[0]);
                 }
             }
 
@@ -423,7 +439,7 @@ app.post("/editBug", (req, res) => {
                         feedType: "edit",
                     });
                     if (team.feed.length < 100) {
-                        team.feed.splice(100, team.feed.length-100);
+                        team.feed.splice(100, team.feed.length - 100);
                     }
                     //update labels
 
@@ -452,7 +468,15 @@ app.post("/editBug", (req, res) => {
                     team.markModified("feed");
                     project.markModified("bugs");
                     project.markModified("archivedBugs");
-                    team.save().then(project.save().then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`)));
+                    team.save().then(
+                        project
+                            .save()
+                            .then(
+                                res.redirect(
+                                    `${APP_URL}/console/bug/${req.body.bugId}`
+                                )
+                            )
+                    );
                 }
             );
         }
@@ -536,7 +560,15 @@ app.post("/markBugOngoing", (req, res) => {
                     project.bugs[index].status = "ongoing";
                     project.bugs[index].closeDate = Date(Date.now());
                     project.markModified("bugs");
-                    team.save().then(project.save().then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`)));
+                    team.save().then(
+                        project
+                            .save()
+                            .then(
+                                res.redirect(
+                                    `${APP_URL}/console/bug/${req.body.bugId}`
+                                )
+                            )
+                    );
                 }
             );
         }
@@ -544,21 +576,20 @@ app.post("/markBugOngoing", (req, res) => {
 });
 
 app.post("/changeAvatar", (req, res) => {
-    User.findById(
-        mongoose.Types.ObjectId(req.body.user),
-        async (err, user) => {
-            console.log(user)
-            if (err) return console.log(err);
-            try {
-                const uploadedResponse = await cloudinary.uploader.upload(req.body.data, {upload_preset: "btracker_upload_avatar"})
-                user.avatarURL = uploadedResponse.url
-                user.save().then(res.redirect(`${APP_URL}/console/settings`))
-            } catch (e){
-                console.error(e)
-            }
-            
+    User.findById(mongoose.Types.ObjectId(req.body.user), async (err, user) => {
+        console.log(user);
+        if (err) return console.log(err);
+        try {
+            const uploadedResponse = await cloudinary.uploader.upload(
+                req.body.data,
+                { upload_preset: "btracker_upload_avatar" }
+            );
+            user.avatarURL = uploadedResponse.url;
+            user.save().then(res.redirect(`${APP_URL}/console/settings`));
+        } catch (e) {
+            console.error(e);
         }
-    );
+    });
 });
 
 app.post("/uploadImage", (req, res) => {
@@ -574,22 +605,27 @@ app.post("/uploadImage", (req, res) => {
                 }
             }
             try {
-                const uploadedResponse = await cloudinary.uploader.upload(req.body.data, {upload_preset: "btracker_upload"})
-                console.log(uploadedResponse)
-                console.log(project.bugs[index].pictures)
-                if(project.bugs[index].pictures == undefined) {project.bugs[index].pictures = []}
-                project.bugs[index].pictures.push(uploadedResponse.url)
-                
+                const uploadedResponse = await cloudinary.uploader.upload(
+                    req.body.data,
+                    { upload_preset: "btracker_upload" }
+                );
+                console.log(uploadedResponse);
+                console.log(project.bugs[index].pictures);
+                if (project.bugs[index].pictures == undefined) {
+                    project.bugs[index].pictures = [];
+                }
+                project.bugs[index].pictures.push(uploadedResponse.url);
+
                 project.markModified("bugs");
-                project.save().then(res.redirect(`${APP_URL}/console/${req.body.bugId}`))
-            } catch (e){
-                console.error(e)
+                project
+                    .save()
+                    .then(res.redirect(`${APP_URL}/console/${req.body.bugId}`));
+            } catch (e) {
+                console.error(e);
             }
-            
         }
     );
 });
-
 
 app.post("/openBug", (req, res) => {
     Project.findById(
@@ -625,7 +661,15 @@ app.post("/openBug", (req, res) => {
                     team.markModified("feed");
                     project.bugs[index].status = "open";
                     project.markModified("bugs");
-                    team.save().then(project.save().then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`)));
+                    team.save().then(
+                        project
+                            .save()
+                            .then(
+                                res.redirect(
+                                    `${APP_URL}/console/bug/${req.body.bugId}`
+                                )
+                            )
+                    );
                 }
             );
         }
@@ -701,7 +745,11 @@ app.post("/commit", (req, res) => {
 
                     team.markModified("feed");
                     project.markModified("bugs");
-                    team.save().then(project.save().then(res.redirect(`${APP_URL}/console/bugs`)));
+                    team.save().then(
+                        project
+                            .save()
+                            .then(res.redirect(`${APP_URL}/console/bugs`))
+                    );
                 }
             );
         }
@@ -774,7 +822,9 @@ app.post("/postComment", (req, res) => {
 
             project.bugs[index].comments.push(newComment);
             project.markModified("bugs");
-            project.save().then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
+            project
+                .save()
+                .then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
         }
     );
 });
@@ -825,7 +875,9 @@ app.post("/postReply", (req, res) => {
             traverseComments(project.bugs[bIndex].comments);
 
             project.markModified("bugs");
-            project.save().then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
+            project
+                .save()
+                .then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
         }
     );
 });
