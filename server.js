@@ -86,14 +86,12 @@ app.post("/register", async (req, res) => {
                 if (err) {
                     return console.log(err);
                 }
-                //console.log(hash);
                 if (data == null) {
                     const newUser = new User({
                         name: req.body.name,
                         username: req.body.email,
                         password: hash,
                     });
-                    //console.log(newUser);
                     newUser.save().then(() => {
                         res.send("success");
                     });
@@ -115,11 +113,39 @@ app.post(
         failureFlash: true,
     })
 );
+app.post("/searchTeams", function (req, res) {
+    Team.find({ name: { $regex: `${req.body.query}` } }, (err, teams) => {
+        if (err) return console.log(err);
+        const result = [];
+        teams.map((team) => result.push({ team: team.name, teamId: team._id }));
+        console.log(result);
+        res.json({ team: result });
+    });
+});
+
+app.post("/joinTeam", function (req, res) {
+    Team.findById(mongoose.Types.ObjectId(req.body.teamId), (err, team) => {
+        if (err) return console.log(err);
+        User.findById(
+            mongoose.Types.ObjectId(req.session.passport.user),
+            (err, user) => {
+                if (err) return console.error(err);
+                team.invites.push({
+                    name: user.name,
+                    id: req.session.passport.user,
+                    avatar: user.avatarURL,
+                });
+
+                team.markModified("invites");
+                team.save().then(res.redirect(`${APP_URL}/console/newTeam`));
+            }
+        );
+    });
+});
 
 app.post("/getBug", (req, res) => {
     Project.findById(req.body.projectId, (err, project) => {
         if (err) return res.json({ err: 1 });
-
         return res.json(
             project.bugs.filter((bug) => bug._id == req.body.bugId)[0]
         );

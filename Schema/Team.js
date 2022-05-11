@@ -21,6 +21,7 @@ const TeamSchema = mongoose.Schema({
     settings: {
         daysToArchive: { type: Number, default: 7 },
     },
+    invites: [],
 });
 
 module.exports = mongoose.model("Team", TeamSchema);
