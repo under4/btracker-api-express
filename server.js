@@ -113,6 +113,7 @@ app.post(
         failureFlash: true,
     })
 );
+
 app.post("/searchTeams", function (req, res) {
     Team.find({ name: { $regex: `${req.body.query}` } }, (err, teams) => {
         if (err) return console.log(err);
@@ -141,6 +142,34 @@ app.post("/joinTeam", function (req, res) {
             }
         );
     });
+});
+
+app.post("/changeTeam", (req, res) => {
+    User.findById(
+        mongoose.Types.ObjectId(req.session.passport.user),
+        (err, user) => {
+            if (err) return res.json({ err: 1 });
+            user.activeTeam = mongoose.Types.ObjectId(req.body.teamId);
+            user.markModified("activeTeam");
+            user.save().then(() =>
+                res.redirect(`${APP_URL}/console/dashboard`)
+            );
+        }
+    );
+});
+
+app.post("/changeProject", (req, res) => {
+    User.findById(
+        mongoose.Types.ObjectId(req.session.passport.user),
+        (err, user) => {
+            if (err) return res.json({ err: 1 });
+            user.activeProject = mongoose.Types.ObjectId(req.body.projectId);
+            user.markModified("activeProject");
+            user.save().then(() =>
+                res.redirect(`${APP_URL}/console/dashboard`)
+            );
+        }
+    );
 });
 
 app.post("/getBug", (req, res) => {
@@ -265,7 +294,7 @@ app.post("/createProject", (req, res) => {
                     user.save();
                     newProject
                         .save()
-                        .then(res.json({ err: 0, message: "Success" }));
+                        .then(res.redirect(`${APP_URL}/console/dashboard`));
                 }
             );
         }
@@ -283,11 +312,7 @@ app.post("/postBug", (req, res) => {
         }
 
         for (var i = 0; i < project.bugs.length; i++) {
-            if (
-                project.bugs[i].closeDate <
-                    Date.now() - 1000 * 60 * 60 * 24 * 3 &&
-                project.bugs[i].status === "archived"
-            ) {
+            if (project.bugs[i].status === "closed") {
                 if (project.archivedBugs) {
                     project.archivedBugs = [];
                 }
@@ -425,11 +450,7 @@ app.post("/editBug", (req, res) => {
             if (err) return console.log(err);
 
             for (var i = 0; i < project.bugs.length; i++) {
-                if (
-                    project.bugs[i].closeDate <
-                        Date.now() - 1000 * 60 * 60 * 24 * 3 &&
-                    project.bugs[i].status === "closed"
-                ) {
+                if (project.bugs[i].status === "closed") {
                     if (project.archivedBugs) {
                         project.archivedBugs = [];
                     }
@@ -523,6 +544,11 @@ app.post("/markBugComplete", (req, res) => {
                 }
             }
 
+            if (project.archivedBugs) {
+                project.archivedBugs = [];
+            }
+            project.archivedBugs.push(project.bugs.splice(index, 1)[0]);
+
             Team.findById(
                 mongoose.Types.ObjectId(project.team),
                 (err, team) => {
@@ -544,6 +570,7 @@ app.post("/markBugComplete", (req, res) => {
                     project.bugs[index].status = "closed";
                     project.bugs[index].closeDate = Date(Date.now());
                     project.markModified("bugs");
+                    project.markModified("archivedBugs");
                     team.save().then(project.save().then(res.send("success")));
                 }
             );
