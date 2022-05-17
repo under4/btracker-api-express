@@ -152,7 +152,7 @@ app.post("/changeTeam", (req, res) => {
             user.activeTeam = mongoose.Types.ObjectId(req.body.teamId);
             user.markModified("activeTeam");
             user.save().then(() =>
-                res.redirect(`${APP_URL}/console/dashboard`)
+                res.send("success")
             );
         }
     );
@@ -166,7 +166,7 @@ app.post("/changeProject", (req, res) => {
             user.activeProject = mongoose.Types.ObjectId(req.body.projectId);
             user.markModified("activeProject");
             user.save().then(() =>
-                res.redirect(`${APP_URL}/console/dashboard`)
+                res.send("success")
             );
         }
     );
@@ -612,9 +612,7 @@ app.post("/markBugOngoing", (req, res) => {
                         project
                             .save()
                             .then(
-                                res.redirect(
-                                    `${APP_URL}/console/bug/${req.body.bugId}`
-                                )
+                                res.send("success")
                             )
                     );
                 }
@@ -671,6 +669,52 @@ app.post("/uploadImage", (req, res) => {
             } catch (e) {
                 console.error(e);
             }
+        }
+    );
+});
+
+app.post("/markBugOpen", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return console.log(err);
+
+            let index;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                    i = project.bugs.length;
+                }
+            }
+            Team.findById(
+                mongoose.Types.ObjectId(project.team),
+                (err, team) => {
+                    if (err) return err;
+                    team.feed.unshift({
+                        feedText: `${project.bugs[index].bugId} has been reopened by ${req.body.state.usrName}`,
+                        date: new Date(),
+                        source: {
+                            sourceString: project.name,
+                            sourceId: project._id,
+                        },
+                        feedType: "open",
+                    });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
+
+                    team.markModified("feed");
+                    project.bugs[index].status = "open";
+                    project.markModified("bugs");
+                    team.save().then(
+                        project
+                            .save()
+                            .then(
+                                res.send("success")
+                            )
+                    );
+                }
+            );
         }
     );
 });
@@ -750,6 +794,7 @@ app.post("/commit", (req, res) => {
                         close++;
                         project.bugs[index].status = "closed";
                         project.bugs[index].closeDate = new Date(Date.now());
+                        project.archivedBugs.push(project.bugs.splice(index, 1)[0]);
                         break;
                     case "ongoingBugs":
                         ongoing++;
@@ -793,6 +838,7 @@ app.post("/commit", (req, res) => {
 
                     team.markModified("feed");
                     project.markModified("bugs");
+                    project.markModified("archivedBugs");
                     team.save().then(
                         project
                             .save()
@@ -931,6 +977,7 @@ app.post("/postReply", (req, res) => {
 });
 
 app.post("/getProjectInfo", (req, res) => {
+    console.log(req.body)
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
