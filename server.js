@@ -93,7 +93,7 @@ app.post("/register", async (req, res) => {
                         password: hash,
                     });
                     newUser.save().then(() => {
-                        res.send("success");
+                        res.redirect(`${process.env.APP_URL}/login/signin`);
                     });
                 } else {
                     res.send("fail");
@@ -313,9 +313,6 @@ app.post("/postBug", (req, res) => {
 
         for (var i = 0; i < project.bugs.length; i++) {
             if (project.bugs[i].status === "closed") {
-                if (project.archivedBugs) {
-                    project.archivedBugs = [];
-                }
                 project.archivedBugs.push(project.bugs.splice(i, 1)[0]);
             }
         }
@@ -410,8 +407,8 @@ app.post("/archive", (req, res) => {
                     i = project.bugs.length;
                 }
             }
-            project.bugs[index].status = "archived";
-            project.archivedBugs.push(project.bugs.splice(index, 1)[0]);
+            
+            
 
             Team.findById(
                 mongoose.Types.ObjectId(project.team),
@@ -429,6 +426,8 @@ app.post("/archive", (req, res) => {
                     if (team.feed.length < 100) {
                         team.feed.splice(100, 1);
                     }
+                    //project.bugs[index].status = "archived";
+                    project.archivedBugs.push(project.bugs.splice(index, 1)[0]);
                     team.markModified("feed");
                     project.markModified("bugs");
                     project.markModified("archivedBugs");
@@ -450,10 +449,8 @@ app.post("/editBug", (req, res) => {
             if (err) return console.log(err);
 
             for (var i = 0; i < project.bugs.length; i++) {
-                if (project.bugs[i].status === "closed") {
-                    if (project.archivedBugs) {
-                        project.archivedBugs = [];
-                    }
+                console.log(project.bugs[i]);
+                if (project.bugs[i].status == "closed") {
                     project.archivedBugs.push(project.bugs.splice(i, 1)[0]);
                 }
             }
@@ -539,16 +536,13 @@ app.post("/markBugComplete", (req, res) => {
             let index;
             for (var i = 0; i < project.bugs.length; i++) {
                 if (project.bugs[i]._id == req.body.bugId) {
+                    
                     index = i;
+                    console.log(project.bugs[index])
                     i = project.bugs.length;
                 }
             }
-
-            if (project.archivedBugs) {
-                project.archivedBugs = [];
-            }
-            project.archivedBugs.push(project.bugs.splice(index, 1)[0]);
-
+            
             Team.findById(
                 mongoose.Types.ObjectId(project.team),
                 (err, team) => {
@@ -569,6 +563,7 @@ app.post("/markBugComplete", (req, res) => {
                     team.markModified("feed");
                     project.bugs[index].status = "closed";
                     project.bugs[index].closeDate = Date(Date.now());
+                    project.archivedBugs.push(project.bugs.splice(index, 1)[0]);
                     project.markModified("bugs");
                     project.markModified("archivedBugs");
                     team.save().then(project.save().then(res.send("success")));
@@ -687,19 +682,19 @@ app.post("/openBug", (req, res) => {
             if (err) return console.log(err);
 
             let index;
-            for (var i = 0; i < project.bugs.length; i++) {
-                if (project.bugs[i]._id == req.body.bugId) {
+            for (var i = 0; i < project.archivedBugs.length; i++) {
+                if (project.archivedBugs[i]._id == req.body.bugId) {
                     index = i;
                     i = project.bugs.length;
                 }
             }
-            console.log(project.bugs[index]);
+            console.log(project.archivedBugs[index]);
             Team.findById(
                 mongoose.Types.ObjectId(project.team),
                 (err, team) => {
                     if (err) return err;
                     team.feed.unshift({
-                        feedText: `${project.bugs[index].bugId} has been opened by ${req.body.state.usrName}`,
+                        feedText: `${project.archivedBugs[index].bugId} has been reopened by ${req.body.state.usrName}`,
                         date: new Date(),
                         source: {
                             sourceString: project.name,
@@ -712,15 +707,15 @@ app.post("/openBug", (req, res) => {
                     }
 
                     team.markModified("feed");
-                    project.bugs[index].status = "open";
+                    project.archivedBugs[index].status = "open";
+                    project.bugs.push(project.archivedBugs.splice(index, 1)[0]);
                     project.markModified("bugs");
+                    project.markModified("archivedBugs");
                     team.save().then(
                         project
                             .save()
                             .then(
-                                res.redirect(
-                                    `${APP_URL}/console/bug/${req.body.bugId}`
-                                )
+                                res.send("success")
                             )
                     );
                 }
