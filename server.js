@@ -318,7 +318,7 @@ app.post("/postBug", (req, res) => {
         }
 
         const bugId =
-            project.projectIdentifier + "-" + project.bugIdIncrementer;
+            project.projectIdentifier.toUpperCase() + "-" + project.bugIdIncrementer;
 
         const newBug = new Bug({
             bugId: bugId,
@@ -767,6 +767,26 @@ app.post("/openBug", (req, res) => {
         }
     );
 });
+
+app.post("followBug", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return console.log(err);
+
+            let index;
+            for (var i = 0; i < project.archivedBugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                    i = project.bugs.length;
+                }
+            }
+            project.bugs[index].followedBy.includes(req.session.passport.user)?project.bugs[index].followedBy.splice(project.bugs[index].followedBy.indexOf(req.session.passport.user), 1): project.bugs[index].followedBy.push(req.session.passport.user)
+            project.markModified("bugs")
+            project.save().then(res.send("success"));
+        }
+    );
+})
 
 app.post("/commit", (req, res) => {
     let open = 0;
