@@ -72,6 +72,47 @@ const random = (max) => {
     return Math.floor(Math.random() * (max + 1));
 };
 
+const notify = (sUser, team, project, bug, type, following) => {
+    console.log(sUser, team, project, bug, type, following);
+    for (let toNotify of following) {
+        User.findById(toNotify, function (err, user) {
+            if (err) {
+                return err;
+            }
+            let newNotif = {
+                project: { id: project.id, name: project.name },
+                team: { id: team.id, name: team.name },
+                bug: { id: bug.id, name: bug.name },
+            };
+            switch (type) {
+                case "edit":
+                    newNotif.text = `${bug.name} has been edited by ${sUser}.`;
+                    break;
+                case "close":
+                    newNotif.text = `${bug.name} has been closed by ${sUser}.`;
+                    break;
+                case "reopen":
+                    newNotif.text = `${bug.name} has been reopened by ${sUser}.`;
+                    break;
+                case "assign":
+                    newNotif.text = `${bug.name} has been assigned to you by ${sUser}.`;
+                    break;
+                case "reply":
+                    newNotif.text = `${sUser} has replied to your comment.`;
+                    break;
+                case "inReview":
+                    newNotif.text = `${sUser} marked ${bug.name} to review.`;
+                    break;
+                default:
+                    newNotif.text = `unaccounted type notification`;
+            }
+            user.notifications.unshift(newNotif);
+            user.markModified("notifications");
+            user.save();
+        });
+    }
+};
+
 app.get("/", (req, res) => {
     res.json({ greeting: "hello world" });
 });
@@ -119,7 +160,6 @@ app.post("/searchTeams", function (req, res) {
         if (err) return console.log(err);
         const result = [];
         teams.map((team) => result.push({ team: team.name, teamId: team._id }));
-        console.log(result);
         res.json({ team: result });
     });
 });
@@ -178,7 +218,6 @@ app.post("/getBug", (req, res) => {
 });
 
 app.post("/getArchivedBug", (req, res) => {
-    console.log(req.body);
     Project.findById(req.body.projectId, (err, project) => {
         if (err) return res.json({ err: 1 });
         if (project.archivedBugs.length == 0) {
@@ -392,7 +431,6 @@ app.post("/getArchivedBugs", function (req, res) {
 });
 
 app.post("/archive", (req, res) => {
-    console.log(req.body);
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
@@ -445,7 +483,6 @@ app.post("/editBug", (req, res) => {
             if (err) return console.log(err);
 
             for (var i = 0; i < project.bugs.length; i++) {
-                console.log(project.bugs[i]);
                 if (project.bugs[i].status == "closed") {
                     project.archivedBugs.push(project.bugs.splice(i, 1)[0]);
                 }
@@ -501,8 +538,28 @@ app.post("/editBug", (req, res) => {
                     if (team.feed.length < 100) {
                         team.feed.splice(100, 1);
                     }
-
                     project.bugs[index].labels = labels;
+
+                    //notify users
+                    if (project.bugs[index].followedBy.length > 0) {
+                        User.findById(
+                            mongoose.Types.ObjectId(req.session.passport.user),
+                            (err, sourceUser) => {
+                                if (err) return err;
+                                notify(
+                                    sourceUser.name,
+                                    { name: team.name, id: team._id },
+                                    { name: project.name, id: project._id },
+                                    {
+                                        name: project.bugs[index].bugId,
+                                        id: project.bugs[index]._id,
+                                    },
+                                    "edit",
+                                    project.bugs[index].followedBy
+                                );
+                            }
+                        );
+                    }
 
                     team.markModified("labels");
                     team.markModified("feed");
@@ -553,6 +610,27 @@ app.post("/markBugComplete", (req, res) => {
                     });
                     if (team.feed.length < 100) {
                         team.feed.splice(100, 1);
+                    }
+
+                    //notify users
+                    if (project.bugs[index].followedBy.length > 0) {
+                        User.findById(
+                            mongoose.Types.ObjectId(req.session.passport.user),
+                            (err, sourceUser) => {
+                                if (err) return err;
+                                notify(
+                                    sourceUser.name,
+                                    { name: team.name, id: team._id },
+                                    { name: project.name, id: project._id },
+                                    {
+                                        name: project.bugs[index].bugId,
+                                        id: project.bugs[index]._id,
+                                    },
+                                    "close",
+                                    project.bugs[index].followedBy
+                                );
+                            }
+                        );
                     }
 
                     team.markModified("feed");
@@ -981,6 +1059,29 @@ app.post("/postReply", (req, res) => {
             project
                 .save()
                 .then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
+        }
+    );
+});
+
+app.post("/clearNotifs", (req, res) => {
+    User.findById(
+        mongoose.Types.ObjectId(req.session.passport.user),
+        (err, user) => {
+            if (err) return err;
+            user.notifications = [];
+            user.markModified("notifications");
+            user.save().then(res.send("success"));
+        }
+    );
+});
+
+app.get("/checkNotifs", (req, res) => {
+    User.findById(
+        mongoose.Types.ObjectId(req.session.passport.user),
+        (err, user) => {
+            if (err) return err;
+
+            return res.send(user.notifications);
         }
     );
 });

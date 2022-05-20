@@ -13,7 +13,14 @@ const UserSchema = mongoose.Schema({
     activeTeam: { type: mongoose.SchemaTypes.ObjectId, ref: "Team" },
     activeProject: { type: mongoose.SchemaTypes.ObjectId, ref: "Project" },
     settings: { darkTheme: { type: Boolean, default: false } },
-    notifications: [{ text: String, link: String }],
+    notifications: [
+        {
+            text: String,
+            project: { id: mongoose.SchemaTypes.ObjectId, name: String },
+            team: { id: mongoose.SchemaTypes.ObjectId, name: String },
+            date: { type: Date, default: Date.now() },
+        },
+    ],
     avatarURL: String,
 });
 
