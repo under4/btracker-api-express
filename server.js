@@ -151,9 +151,7 @@ app.post("/changeTeam", (req, res) => {
             if (err) return res.json({ err: 1 });
             user.activeTeam = mongoose.Types.ObjectId(req.body.teamId);
             user.markModified("activeTeam");
-            user.save().then(() =>
-                res.send("success")
-            );
+            user.save().then(() => res.send("success"));
         }
     );
 });
@@ -165,9 +163,7 @@ app.post("/changeProject", (req, res) => {
             if (err) return res.json({ err: 1 });
             user.activeProject = mongoose.Types.ObjectId(req.body.projectId);
             user.markModified("activeProject");
-            user.save().then(() =>
-                res.send("success")
-            );
+            user.save().then(() => res.send("success"));
         }
     );
 });
@@ -318,7 +314,9 @@ app.post("/postBug", (req, res) => {
         }
 
         const bugId =
-            project.projectIdentifier.toUpperCase() + "-" + project.bugIdIncrementer;
+            project.projectIdentifier.toUpperCase() +
+            "-" +
+            project.bugIdIncrementer;
 
         const newBug = new Bug({
             bugId: bugId,
@@ -407,8 +405,6 @@ app.post("/archive", (req, res) => {
                     i = project.bugs.length;
                 }
             }
-            
-            
 
             Team.findById(
                 mongoose.Types.ObjectId(project.team),
@@ -536,13 +532,12 @@ app.post("/markBugComplete", (req, res) => {
             let index;
             for (var i = 0; i < project.bugs.length; i++) {
                 if (project.bugs[i]._id == req.body.bugId) {
-                    
                     index = i;
-                    console.log(project.bugs[index])
+                    console.log(project.bugs[index]);
                     i = project.bugs.length;
                 }
             }
-            
+
             Team.findById(
                 mongoose.Types.ObjectId(project.team),
                 (err, team) => {
@@ -608,13 +603,7 @@ app.post("/markBugOngoing", (req, res) => {
                     project.bugs[index].status = "ongoing";
                     project.bugs[index].closeDate = Date(Date.now());
                     project.markModified("bugs");
-                    team.save().then(
-                        project
-                            .save()
-                            .then(
-                                res.send("success")
-                            )
-                    );
+                    team.save().then(project.save().then(res.send("success")));
                 }
             );
         }
@@ -706,13 +695,7 @@ app.post("/markBugOpen", (req, res) => {
                     team.markModified("feed");
                     project.bugs[index].status = "open";
                     project.markModified("bugs");
-                    team.save().then(
-                        project
-                            .save()
-                            .then(
-                                res.send("success")
-                            )
-                    );
+                    team.save().then(project.save().then(res.send("success")));
                 }
             );
         }
@@ -755,38 +738,42 @@ app.post("/openBug", (req, res) => {
                     project.bugs.push(project.archivedBugs.splice(index, 1)[0]);
                     project.markModified("bugs");
                     project.markModified("archivedBugs");
-                    team.save().then(
-                        project
-                            .save()
-                            .then(
-                                res.send("success")
-                            )
-                    );
+                    team.save().then(project.save().then(res.send("success")));
                 }
             );
         }
     );
 });
 
-app.post("followBug", (req, res) => {
+app.post("/followBug", (req, res) => {
+    console.log("here");
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
             if (err) return console.log(err);
 
             let index;
-            for (var i = 0; i < project.archivedBugs.length; i++) {
+            for (var i = 0; i < project.bugs.length; i++) {
                 if (project.bugs[i]._id == req.body.bugId) {
                     index = i;
                     i = project.bugs.length;
                 }
             }
-            project.bugs[index].followedBy.includes(req.session.passport.user)?project.bugs[index].followedBy.splice(project.bugs[index].followedBy.indexOf(req.session.passport.user), 1): project.bugs[index].followedBy.push(req.session.passport.user)
-            project.markModified("bugs")
+            project.bugs[index].followedBy.includes(req.session.passport.user)
+                ? project.bugs[index].followedBy.splice(
+                      project.bugs[index].followedBy.indexOf(
+                          req.session.passport.user
+                      ),
+                      1
+                  )
+                : project.bugs[index].followedBy.push(
+                      req.session.passport.user
+                  );
+            project.markModified("bugs");
             project.save().then(res.send("success"));
         }
     );
-})
+});
 
 app.post("/commit", (req, res) => {
     let open = 0;
@@ -814,7 +801,9 @@ app.post("/commit", (req, res) => {
                         close++;
                         project.bugs[index].status = "closed";
                         project.bugs[index].closeDate = new Date(Date.now());
-                        project.archivedBugs.push(project.bugs.splice(index, 1)[0]);
+                        project.archivedBugs.push(
+                            project.bugs.splice(index, 1)[0]
+                        );
                         break;
                     case "ongoingBugs":
                         ongoing++;
@@ -997,7 +986,7 @@ app.post("/postReply", (req, res) => {
 });
 
 app.post("/getProjectInfo", (req, res) => {
-    console.log(req.body)
+    console.log(req.body);
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
