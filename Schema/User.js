@@ -21,6 +21,12 @@ const UserSchema = mongoose.Schema({
             date: { type: Date, default: Date.now() },
         },
     ],
+    invites: [
+        {
+            team: { id: mongoose.SchemaTypes.ObjectId, name: String },
+            date: { type: Date, default: Date.now() },
+        },
+    ],
     avatarURL: String,
 });
 

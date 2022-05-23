@@ -164,6 +164,43 @@ app.post("/searchTeams", function (req, res) {
     });
 });
 
+app.post("/searchUsers", function (req, res) {
+    User.find({ username: { $regex: `${req.body.query}` } }, (err, users) => {
+        if (err) return console.log(err);
+        const result = [];
+        users.map((user) =>
+            result.push({
+                user: user.name,
+                userId: user._id,
+                avatar: user.avatarURL,
+            })
+        );
+        console.log(result);
+        res.json({ users: result });
+    });
+});
+
+app.post("/inviteUser", function (req, res) {
+    console.log(req.body);
+    User.findById(mongoose.Types.ObjectId(req.body.id), (err, user) => {
+        if (err) return console.log(err);
+        if (!user.invites) {
+            user.invites = [];
+        }
+        if (
+            user.invites.filter((invite) => invite.team.id == req.body.team.id)
+                .length == 0
+        ) {
+            user.invites.push({
+                team: { id: req.body.team.id, name: req.body.team.name },
+            });
+            user.save().then(res.send("success"));
+        } else {
+            res.send("error");
+        }
+    });
+});
+
 app.post("/joinTeam", function (req, res) {
     Team.findById(mongoose.Types.ObjectId(req.body.teamId), (err, team) => {
         if (err) return console.log(err);
