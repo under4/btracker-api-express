@@ -202,7 +202,7 @@ app.post("/inviteUser", function (req, res) {
 });
 
 app.post("/joinTeam", function (req, res) {
-    Team.findById(mongoose.Types.ObjectId(req.body.teamId), (err, team) => {
+    Team.findById(mongoose.Types.ObjectId(req.body.team), (err, team) => {
         if (err) return console.log(err);
         User.findById(
             mongoose.Types.ObjectId(req.session.passport.user),
@@ -219,6 +219,52 @@ app.post("/joinTeam", function (req, res) {
             }
         );
     });
+});
+
+app.post("/acceptTeamInvite", function (req, res) {
+    Team.findById(mongoose.Types.ObjectId(req.body.teamId), (err, team) => {
+        if (err) return console.log(err);
+        User.findById(
+            mongoose.Types.ObjectId(req.session.passport.user),
+            (err, user) => {
+                if (err) return console.error(err);
+
+                let index;
+                for (let i = 0; i < user.invites.length; i++) {
+                    if (user.invites[i].team.id == req.body.teamId) {
+                        i = index;
+                        i = user.invites.length;
+                    }
+                }
+                user.invites.splice(index, 1);
+
+                team.users.push([user._id, "member", user.name]);
+                user.teams.push([team.name, team._id]);
+                team.markModified("users");
+
+                team.save().then(user.save().then(res.send("success")));
+            }
+        );
+    });
+});
+
+app.post("/ignoreTeamInvite", function (req, res) {
+    User.findById(
+        mongoose.Types.ObjectId(req.session.passport.user),
+        (err, user) => {
+            if (err) return console.error(err);
+            let index;
+            for (let i = 0; i < user.invites.length; i++) {
+                if (user.invites[i].team.id == req.body.teamId) {
+                    i = index;
+                    i = user.invites.length;
+                }
+            }
+            user.invites.splice(index, 1);
+            user.markModified("invites");
+            user.save().then(res.json({ data: user.invites }));
+        }
+    );
 });
 
 app.post("/changeTeam", (req, res) => {
@@ -1008,9 +1054,7 @@ app.post("/deleteBug", (req, res) => {
 
                     team.markModified("feed");
                     project.markModified("bugs");
-                    team.save().then(
-                        project.save().then(res.redirect(`${APP_URL}/console`))
-                    );
+                    team.save().then(project.save().then(res.send("success")));
                 }
             );
         }
