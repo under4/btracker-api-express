@@ -49,7 +49,7 @@ const Bug = require("./Schema/Bug");
 const Team = require("./Schema/Team");
 const Project = require("./Schema/Project");
 
-const initializePass = require("./passport-config");
+const initializePass = require("./utils/passport-config");
 initializePass(
     passport,
     async (username) => {
@@ -112,10 +112,6 @@ const notify = (sUser, team, project, bug, type, following) => {
         });
     }
 };
-
-app.get("/", (req, res) => {
-    res.json({ greeting: "hello world" });
-});
 
 app.post("/register", async (req, res) => {
     try {
@@ -357,13 +353,16 @@ app.post("/createTeam", (req, res) => {
                     ]);
                     user.activeTeam = newTeam.id;
                     user.save();
+                    newTeam.users.push([
+                        req.session.passport.user,
+                        "lead",
+                        user.name,
+                    ]);
+                    newTeam.save().then(() => {
+                        res.redirect(`${APP_URL}/console/team`);
+                    });
                 }
             );
-            newTeam.users.push([req.session.passport.user, "lead"]);
-
-            newTeam.save().then(() => {
-                res.redirect(`${APP_URL}/console/team`);
-            });
         }
     });
 });
@@ -1140,6 +1139,36 @@ app.post("/postReply", (req, res) => {
             project
                 .save()
                 .then(res.redirect(`${APP_URL}/console/bug/${req.body.bugId}`));
+        }
+    );
+});
+
+app.post("/postToFeed", (req, res) => {
+    User.findById(
+        mongoose.Types.ObjectId(req.session.passport.user),
+        (err, user) => {
+            if (err) return err;
+            Team.findById(
+                mongoose.Types.ObjectId(req.body.team),
+                (err, team) => {
+                    if (err) return err;
+                    team.feed.unshift({
+                        feedText: req.body.feed,
+                        source: {
+                            id: req.session.passport.user,
+                            sourceString: user.name,
+                        },
+                        feedType: "user",
+                        //date: Schema default
+                    });
+
+                    if (team.feed.length > 100) {
+                        team.feed = team.feed.slice(0, 99);
+                    }
+                    team.markModified("feed");
+                    team.save().then(res.send("success"));
+                }
+            );
         }
     );
 });

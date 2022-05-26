@@ -13,7 +13,7 @@ const TeamSchema = mongoose.Schema({
     feed: [
         {
             feedText: String,
-            date: Date,
+            date: { type: Date, default: Date.now() },
             source: { id: mongoose.Types.ObjectId, sourceString: String },
             feedType: String,
         },
