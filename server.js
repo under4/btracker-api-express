@@ -252,15 +252,38 @@ app.post("/ignoreTeamInvite", function (req, res) {
             let index;
             for (let i = 0; i < user.invites.length; i++) {
                 if (user.invites[i].team.id == req.body.teamId) {
-                    i = index;
+                    index = i;
                     i = user.invites.length;
                 }
             }
+
             user.invites.splice(index, 1);
             user.markModified("invites");
             user.save().then(res.json({ data: user.invites }));
         }
     );
+});
+
+app.post("/ignoreUserRequest", (req, res) => {
+    //console.log(req);
+    Team.findById(mongoose.Types.ObjectId(req.body.activeTeam), (err, team) => {
+        if (err) return console.error(err);
+
+        let teamIndex;
+        for (let i = 0; i < team.invites.length; i++) {
+            if (team.invites[i].id == req.body.id) {
+                teamIndex = i;
+                i = team.invites.length;
+            }
+        }
+
+        team.invites.splice(teamIndex, 1);
+        team.markModified("invites");
+        console.log(team.invites);
+        team.save().then(() => {
+            res.send("success");
+        });
+    });
 });
 
 app.post("/changeTeam", (req, res) => {
