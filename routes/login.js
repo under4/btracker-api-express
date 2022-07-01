@@ -44,6 +44,16 @@ loginRouter.post(
     })
 );
 
+loginRouter.post("/usernameCheck", (req, res) => {
+    //console.log(req.body.username);
+    User.find({ username: req.body.username }, (err, user) => {
+        //console.log(user);
+        if (err) return console.error(err);
+        if (user.length == 0) return res.send("noUser");
+        if (user != undefined) return res.send("userExists");
+    });
+});
+
 loginRouter.delete("/logout", (req, res) => {
     req.logOut();
     res.redirect(`${process.env.APP_URL}`);

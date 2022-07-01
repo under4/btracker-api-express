@@ -3,6 +3,7 @@ const settingsRouter = require("express").Router();
 const mongoose = require("mongoose");
 
 const Team = require("../Schema/Team.js");
+const Project = require("../Schema/Project.js");
 
 settingsRouter.post("/saveLabelColorChanges", (req, res) => {
     Team.findById(mongoose.Types.ObjectId(req.body.activeTeam), (err, team) => {
@@ -27,9 +28,28 @@ settingsRouter.post("/deleteSelectedLabels", (req, res) => {
             delete team.labels[label];
         }
 
+        for (const project of team.projects) {
+            Project.findById(
+                mongoose.Types.ObjectId(project[1]),
+                (err, project) => {
+                    if (err) return console.error(err);
+                    for (const bug of project.bugs) {
+                        for (let i = 0; i < bug.labels.length; i++) {
+                            if (req.body.toDelete.includes(bug.labels[i])) {
+                                bug.labels.splice(i, 1);
+                                i--;
+                            }
+                        }
+                    }
+                    project.markModified("bugs");
+                    project.save();
+                }
+            );
+        }
+
         console.log(team.labels);
-        //team.markModified("labels");
-        //team.save().then(res.send("success"));
+        team.markModified("labels");
+        team.save().then(res.send("success"));
     });
 });
 

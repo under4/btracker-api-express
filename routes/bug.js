@@ -6,6 +6,7 @@ const User = require("../Schema/User.js");
 const Project = require("../Schema/Project.js");
 const Bug = require("../Schema/Bug.js");
 const Team = require("../Schema/Team.js");
+const Comment = require("../Schema/Comment.js");
 
 const APP_URL = process.env.APP_URL;
 
@@ -432,7 +433,7 @@ bugRouter.post("/postBug", (req, res) => {
                 team.feed.splice(100, team.feed.length - 100);
             }
 
-            const labels = req.body.labels.split(",");
+            const labels = req.body.labels.toLowerCase().split(",");
             for (let i = 0; i < labels.length; i++) {
                 labels[i] = labels[i].trim();
                 if (labels[i].length < 1) {
@@ -558,7 +559,7 @@ bugRouter.post("/editBug", (req, res) => {
                     }
                     //update labels
 
-                    const labels = req.body.labels.split(",");
+                    const labels = req.body.labels.toLowerCase().split(",");
                     for (let i = 0; i < labels.length; i++) {
                         labels[i] = labels[i].trim();
                         if (labels[i].length < 1) {
