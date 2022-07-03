@@ -469,6 +469,13 @@ bugRouter.post("/postBug", (req, res) => {
     });
 });
 
+bugRouter.post("/fetchUsers", (req, res) => {
+    Team.findById(mongoose.Types.ObjectId(req.body.teamId), (err, team) => {
+        if (err) return console.error(err);
+        return res.json({ users: team.users });
+    });
+});
+
 bugRouter.post("/archive", (req, res) => {
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
