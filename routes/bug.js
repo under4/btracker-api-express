@@ -775,4 +775,60 @@ bugRouter.post("/postReply", (req, res) => {
     );
 });
 
+bugRouter.post("/assign", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return console.error(err);
+            var bIndex;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    bIndex = i;
+                }
+            }
+            project.bugs[bIndex].assigned.push(req.body.user[0]);
+            Team.findById(
+                mongoose.Types.ObjectId(req.body.teamId),
+                (err, team) => {
+                    if (err) return console.error(err);
+                    team.feed.unshift({
+                        feedText: `${project.bugs[bIndex].bugId} has been assigned to ${req.body.user[2]} by ${req.body.assignedBy}`,
+                        date: new Date(),
+                        source: {
+                            sourceString: project.name,
+                            sourceId: project._id,
+                        },
+                        feedType: "assign",
+                    });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
+                    User.findById(
+                        mongoose.Types.ObjectId(req.body.user[0]),
+                        (err, user) => {
+                            if (err) return console.error(err);
+
+                            user.notifications.unshift({
+                                text: `${project.bugs[bIndex].bugId} has been assigned to you by ${req.body.assignedBy}`,
+                                project: {
+                                    id: project._id,
+                                    name: project.name,
+                                },
+                                team: { id: team._id, name: team.name },
+                            });
+
+                            user.markModified("notifications");
+                            user.save();
+                            team.markModified("feed");
+                            team.save();
+                            project.markModified("bugs");
+                            project.save().then(res.send("success"));
+                        }
+                    );
+                }
+            );
+        }
+    );
+});
+
 module.exports = bugRouter;
