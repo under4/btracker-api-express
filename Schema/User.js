@@ -12,7 +12,7 @@ const UserSchema = mongoose.Schema({
     ],
     activeTeam: { type: mongoose.SchemaTypes.ObjectId, ref: "Team" },
     activeProject: { type: mongoose.SchemaTypes.ObjectId, ref: "Project" },
-    settings: { darkTheme: { type: Boolean, default: false } },
+    settings: { darkTheme: { type: Boolean, default: true } },
     notifications: [
         {
             text: String,

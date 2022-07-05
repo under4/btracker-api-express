@@ -71,14 +71,24 @@ consoleRouter.get("/getConsoleInfo", (req, res) => {
     );
 });
 
-consoleRouter.post("/darkMode", (req, res) => {
+consoleRouter.post("/darkMode", (req) => {
     User.findById(
         mongoose.Types.ObjectId(req.session.passport.user),
         (err, user) => {
-            if (err) return console.log(err);
+            if (err) return console.error(err);
 
             user.settings.darkTheme = req.body.darkTheme;
             user.save();
+        }
+    );
+});
+
+consoleRouter.post("/checkNotifs", (req, res) => {
+    User.findById(
+        mongoose.Types.ObjectId(req.session.passport.user),
+        (err, user) => {
+            if (err) return console.error(err);
+            res.json({ notifs: user.notifications });
         }
     );
 });
