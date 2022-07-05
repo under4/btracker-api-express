@@ -831,4 +831,30 @@ bugRouter.post("/assign", (req, res) => {
     );
 });
 
+bugRouter.post("/unassign", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return console.error(err);
+            var bIndex;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    bIndex = i;
+                }
+            }
+
+            console.log(project.bugs[bIndex].assigned);
+
+            project.bugs[bIndex].assigned = project.bugs[
+                bIndex
+            ].assigned.filter((assigned) => assigned != req.body.user[0]);
+
+            console.log(project.bugs[bIndex].assigned);
+
+            project.markModified("bugs");
+            project.save().then(res.send("success"));
+        }
+    );
+});
+
 module.exports = bugRouter;
