@@ -31,7 +31,6 @@ consoleRouter.post("/changeProject", (req, res) => {
 });
 
 consoleRouter.post("/getProjectInfo", (req, res) => {
-    console.log(req.body);
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
@@ -84,6 +83,7 @@ consoleRouter.post("/darkMode", (req) => {
 });
 
 consoleRouter.post("/checkNotifs", (req, res) => {
+    //console.log(req.session.passport);
     User.findById(
         mongoose.Types.ObjectId(req.session.passport.user),
         (err, user) => {

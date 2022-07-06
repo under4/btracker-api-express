@@ -3,6 +3,8 @@ const teamRouter = require("express").Router();
 const mongoose = require("mongoose");
 
 const User = require("../Schema/User.js");
+const Team = require("../Schema/Team.js");
+const { use } = require("passport");
 
 teamRouter.post("/acceptTeamInvite", function (req, res) {
     Team.findById(mongoose.Types.ObjectId(req.body.teamId), (err, team) => {
@@ -68,7 +70,6 @@ teamRouter.post("/acceptUserRequest", function (req, res) {
 
             team.invites.splice(teamIndex, 1);
             team.markModified("invites");
-            team.save();
 
             team.users.push([user._id, "member", user.name]);
             user.teams.push([team.name, team._id, 1]);
@@ -256,6 +257,7 @@ teamRouter.post("/inviteUser", function (req, res) {
 });
 
 teamRouter.post("/joinTeam", function (req, res) {
+    console.log(req.session);
     Team.findById(mongoose.Types.ObjectId(req.body.team), (err, team) => {
         if (err) return console.log(err);
         User.findById(
@@ -301,6 +303,50 @@ teamRouter.post("/searchUsers", function (req, res) {
         );
         console.log(result);
         res.json({ users: result });
+    });
+});
+
+teamRouter.post("/leaveTeam", function (req, res) {
+    Team.findById(mongoose.Types.ObjectId(req.body.team), (err, team) => {
+        if (err) return console.log(err);
+
+        User.findById(
+            mongoose.Types.ObjectId(req.session.passport.user),
+            (err, user) => {
+                if (err) return console.error(err);
+
+                let teamIndex;
+                for (var i = 0; i < user.teams.length; i++) {
+                    if (user.teams[i][1] == req.body.team) {
+                        teamIndex = i;
+                        i = user.teams.length;
+                        console.log(user.teams[teamIndex]);
+                    }
+                }
+
+                let userIndex;
+                for (var i = 0; i < team.users.length; i++) {
+                    if (team.users[i][0] == req.session.passport.user) {
+                        userIndex = i;
+                        i = team.users.length;
+                    }
+                }
+
+                if (user.teams[teamIndex][1] == req.body.team) {
+                    console.log("test");
+                    team.users.splice(userIndex, 1);
+                    user.teams.splice(teamIndex, 1);
+
+                    user.markModified("teams");
+                    user.activeTeam = user.teams[0][1];
+                    team.markModified("users");
+                    team.save();
+                    user.save().then(() => res.send("success"));
+                } else {
+                    res.send("userNotFound");
+                }
+            }
+        );
     });
 });
 
