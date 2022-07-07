@@ -3,8 +3,11 @@ const teamRouter = require("express").Router();
 const mongoose = require("mongoose");
 
 const User = require("../Schema/User.js");
+const Project = require("../Schema/Project.js");
 const Team = require("../Schema/Team.js");
 const { use } = require("passport");
+
+const APP_URL = process.env.APP_URL;
 
 teamRouter.post("/acceptTeamInvite", function (req, res) {
     Team.findById(mongoose.Types.ObjectId(req.body.teamId), (err, team) => {
@@ -226,13 +229,34 @@ teamRouter.post("/createProject", (req, res) => {
                     team.save();
                     user.activeProject = newProject.id;
                     user.save();
-                    newProject
-                        .save()
-                        .then(res.redirect(`${APP_URL}/console/dashboard`));
+                    newProject.save().then(res.send("success"));
                 }
             );
         }
     );
+});
+
+teamRouter.post("/deleteProject", (req, res) => {
+    Team.findById(mongoose.Types.ObjectId(req.body.activeTeam), (err, team) => {
+        let pIndex;
+        for (var i = 0; i < team.projects.length; i++) {
+            if (team.projects[i][1] == req.body.projectId) {
+                pIndex = i;
+                i = team.projects.length;
+            }
+        }
+        Project.findByIdAndDelete(
+            mongoose.Types.ObjectId(req.body.projectId),
+            (err, project) => {
+                if (err) return console.error(err);
+                else {
+                    team.projects.splice(pIndex, 1);
+                    team.markModified("projects");
+                    team.save().then(res.send("success"));
+                }
+            }
+        );
+    });
 });
 
 teamRouter.post("/inviteUser", function (req, res) {
