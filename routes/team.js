@@ -374,4 +374,23 @@ teamRouter.post("/leaveTeam", function (req, res) {
     });
 });
 
+teamRouter.post("/changeRole", function (req, res) {
+    Team.findById(mongoose.Types.ObjectId(req.body.team), (err, team) => {
+        if (err) return console.log(err);
+
+        let uIndex;
+        for (var i = 0; i < team.users.length; i++) {
+            if (team.users[i][0] == req.body.id[0]) {
+                uIndex = i;
+                i = team.users.length;
+            }
+        }
+
+        team.users[uIndex][1] =
+            team.users[uIndex][1] == "member" ? "lead" : "member";
+        team.markModified("users");
+        team.save().then(res.send("success"));
+    });
+});
+
 module.exports = teamRouter;
