@@ -14,7 +14,12 @@ const BugSchema = mongoose.Schema({
     followedBy: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],
     due: { type: Date },
     postDate: { type: Date, default: Date.now() },
+    submitDate: { type: Date, default: Date.now() },
     closeDate: { type: Date, default: Date.now() },
+    closedBy: {
+        name: { type: String, default: "Not Set" },
+        id: mongoose.SchemaTypes.ObjectId,
+    },
     pictures: [],
 });
 

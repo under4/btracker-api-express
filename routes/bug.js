@@ -130,6 +130,57 @@ bugRouter.post("/markBugOpen", (req, res) => {
     );
 });
 
+bugRouter.post("/markInReview", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.projectId),
+        (err, project) => {
+            if (err) return console.log(err);
+
+            let index;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    index = i;
+                    i = project.bugs.length;
+                }
+            }
+            Team.findById(
+                mongoose.Types.ObjectId(project.team),
+                (err, team) => {
+                    if (err) return err;
+                    team.feed.unshift({
+                        feedText: `${project.bugs[index].bugId} has been marked to review by ${req.body.state.usrName}`,
+                        date: new Date(),
+                        source: {
+                            sourceString: project.name,
+                            sourceId: project._id,
+                        },
+                        feedType: "inReview",
+                    });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
+
+                    /* closeDate: { type: Date, default: Date.now() },
+    closedBy: {
+        name: { type: String, default: "Not Set" },
+        id: mongoose.SchemaTypes.ObjectId,
+    }, */
+
+                    team.markModified("feed");
+                    project.bugs[index].status = "inReview";
+                    project.bugs[index].closeDate = Date.now();
+                    project.bugs[index].closedBy = {
+                        name: req.body.state.usrName,
+                        id: req.body.state.usrId,
+                    };
+                    project.markModified("bugs");
+                    team.save().then(project.save().then(res.send("success")));
+                }
+            );
+        }
+    );
+});
+
 bugRouter.post("/openBug", (req, res) => {
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
@@ -853,6 +904,25 @@ bugRouter.post("/unassign", (req, res) => {
 
             project.markModified("bugs");
             project.save().then(res.send("success"));
+        }
+    );
+});
+
+bugRouter.post("/getInReviewBugs", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.project),
+        (err, project) => {
+            if (err) return console.error(err);
+            var bIndex;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bugId) {
+                    bIndex = i;
+                }
+            }
+
+            res.json({
+                bugs: project.bugs.filter((bug) => bug.status == "inReview"),
+            });
         }
     );
 });
