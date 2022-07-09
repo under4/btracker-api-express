@@ -10,7 +10,12 @@ const BugSchema = mongoose.Schema({
     labels: [],
     numOfComments: { type: Number, default: 0 },
     comments: [],
-    assigned: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],
+    assigned: [
+        {
+            user: { type: mongoose.SchemaTypes.ObjectId, ref: "User" },
+            assignedBy: String,
+        },
+    ],
     followedBy: [{ type: mongoose.SchemaTypes.ObjectId, ref: "User" }],
     due: { type: Date },
     postDate: { type: Date, default: Date.now() },

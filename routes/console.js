@@ -37,13 +37,6 @@ consoleRouter.post("/getProjectInfo", (req, res) => {
             if (err) return err;
 
             if (req.body.activeTeam == project.team) return res.json(project);
-
-            Team.findById(
-                mongoose.Types.ObjectId(req.body.activeTeam),
-                (err, team) => {
-                    console.log("to be implemented");
-                }
-            );
         }
     );
 });
@@ -83,7 +76,6 @@ consoleRouter.post("/darkMode", (req) => {
 });
 
 consoleRouter.post("/checkNotifs", (req, res) => {
-    //console.log(req.session.passport);
     User.findById(
         mongoose.Types.ObjectId(req.session.passport.user),
         (err, user) => {

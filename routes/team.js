@@ -57,7 +57,7 @@ teamRouter.post("/ignoreTeamInvite", function (req, res) {
 });
 
 teamRouter.post("/acceptUserRequest", function (req, res) {
-    console.log(req.body);
+    //console.log(req.body);
     Team.findById(mongoose.Types.ObjectId(req.body.activeTeam), (err, team) => {
         if (err) return console.log(err);
         User.findById(mongoose.Types.ObjectId(req.body.id), (err, user) => {
@@ -99,7 +99,7 @@ teamRouter.post("/ignoreUserRequest", (req, res) => {
 
         team.invites.splice(teamIndex, 1);
         team.markModified("invites");
-        console.log(team.invites);
+        //console.log(team.invites);
         team.save().then(() => {
             res.send("success");
         });
@@ -107,7 +107,7 @@ teamRouter.post("/ignoreUserRequest", (req, res) => {
 });
 
 teamRouter.post("/removeUser", (req, res) => {
-    console.log(req);
+    //console.log(req);
     Team.findById(mongoose.Types.ObjectId(req.body.activeTeam), (err, team) => {
         if (err) return console.error(err);
 
@@ -260,7 +260,7 @@ teamRouter.post("/deleteProject", (req, res) => {
 });
 
 teamRouter.post("/inviteUser", function (req, res) {
-    console.log(req.body);
+    //console.log(req.body);
     User.findById(mongoose.Types.ObjectId(req.body.id), (err, user) => {
         if (err) return console.log(err);
         if (!user.invites) {
@@ -281,7 +281,6 @@ teamRouter.post("/inviteUser", function (req, res) {
 });
 
 teamRouter.post("/joinTeam", function (req, res) {
-    console.log(req.session);
     Team.findById(mongoose.Types.ObjectId(req.body.team), (err, team) => {
         if (err) return console.log(err);
         User.findById(
@@ -325,7 +324,6 @@ teamRouter.post("/searchUsers", function (req, res) {
                 avatar: user.avatarURL,
             })
         );
-        console.log(result);
         res.json({ users: result });
     });
 });
@@ -344,7 +342,6 @@ teamRouter.post("/leaveTeam", function (req, res) {
                     if (user.teams[i][1] == req.body.team) {
                         teamIndex = i;
                         i = user.teams.length;
-                        console.log(user.teams[teamIndex]);
                     }
                 }
 
@@ -357,7 +354,6 @@ teamRouter.post("/leaveTeam", function (req, res) {
                 }
 
                 if (user.teams[teamIndex][1] == req.body.team) {
-                    console.log("test");
                     team.users.splice(userIndex, 1);
                     user.teams.splice(teamIndex, 1);
 

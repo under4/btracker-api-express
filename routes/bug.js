@@ -15,7 +15,6 @@ const random = (max) => {
 };
 
 const notify = (sUser, team, project, bug, type, following) => {
-    console.log(sUser, team, project, bug, type, following);
     for (let toNotify of following) {
         User.findById(toNotify, function (err, user) {
             if (err) {
@@ -72,8 +71,6 @@ bugRouter.post("/uploadImage", (req, res) => {
                     req.body.data,
                     { upload_preset: "btracker_upload" }
                 );
-                console.log(uploadedResponse);
-                console.log(project.bugs[index].pictures);
                 if (project.bugs[index].pictures == undefined) {
                     project.bugs[index].pictures = [];
                 }
@@ -194,7 +191,6 @@ bugRouter.post("/openBug", (req, res) => {
                     i = project.bugs.length;
                 }
             }
-            console.log(project.archivedBugs[index]);
             Team.findById(
                 mongoose.Types.ObjectId(project.team),
                 (err, team) => {
@@ -225,7 +221,6 @@ bugRouter.post("/openBug", (req, res) => {
 });
 
 bugRouter.post("/followBug", (req, res) => {
-    console.log("here");
     Project.findById(
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
@@ -339,7 +334,6 @@ bugRouter.post("/deleteBug", (req, res) => {
         mongoose.Types.ObjectId(req.body.projectId),
         (err, project) => {
             if (err) return err;
-            console.log(project);
             let index;
             for (var i = 0; i < project.bugs.length; i++) {
                 if (project.bugs[i]._id == req.body.bugId) {
@@ -471,7 +465,6 @@ bugRouter.post("/postBug", (req, res) => {
         });
 
         Team.findById(mongoose.Types.ObjectId(project.team), (err, team) => {
-            //console.log(team);
             if (err) return err;
             team.feed.unshift({
                 feedText: `A new bug has been posted by ${req.body.name}`,
@@ -687,7 +680,7 @@ bugRouter.post("/markBugComplete", (req, res) => {
             for (var i = 0; i < project.bugs.length; i++) {
                 if (project.bugs[i]._id == req.body.bugId) {
                     index = i;
-                    console.log(project.bugs[index]);
+                    //console.log(project.bugs[index]);
                     i = project.bugs.length;
                 }
             }
@@ -837,7 +830,11 @@ bugRouter.post("/assign", (req, res) => {
                     bIndex = i;
                 }
             }
-            project.bugs[bIndex].assigned.push(req.body.user[0]);
+
+            project.bugs[bIndex].assigned.push({
+                user: req.body.user[0],
+                assignedBy: req.body.assignedBy,
+            });
             Team.findById(
                 mongoose.Types.ObjectId(req.body.teamId),
                 (err, team) => {
@@ -894,13 +891,9 @@ bugRouter.post("/unassign", (req, res) => {
                 }
             }
 
-            console.log(project.bugs[bIndex].assigned);
-
             project.bugs[bIndex].assigned = project.bugs[
                 bIndex
             ].assigned.filter((assigned) => assigned != req.body.user[0]);
-
-            console.log(project.bugs[bIndex].assigned);
 
             project.markModified("bugs");
             project.save().then(res.send("success"));
@@ -923,6 +916,147 @@ bugRouter.post("/getInReviewBugs", (req, res) => {
             res.json({
                 bugs: project.bugs.filter((bug) => bug.status == "inReview"),
             });
+        }
+    );
+});
+
+bugRouter.post("/closeBug", (req, res) => {
+    //console.log(req.body);
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.project),
+        (err, project) => {
+            if (err) return console.error(err);
+
+            //console.log(project.bugs);
+            var bIndex;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bug) {
+                    bIndex = i;
+                }
+            }
+
+            Team.findById(
+                mongoose.Types.ObjectId(project.team),
+                (err, team) => {
+                    if (err) return err;
+                    team.feed.unshift({
+                        feedText: `${
+                            project.bugs[bIndex].bugId
+                        } has been confirmed by ${
+                            team.users.filter(
+                                (user) => user[0] == req.session.passport.user
+                            )[0][2]
+                        }`,
+                        date: new Date(),
+                        source: {
+                            sourceString: project.name,
+                            sourceId: project._id,
+                        },
+                        feedType: "close",
+                    });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
+
+                    //notify users
+                    if (project.bugs[bIndex].followedBy.length > 0) {
+                        User.findById(
+                            mongoose.Types.ObjectId(req.session.passport.user),
+                            (err, sourceUser) => {
+                                if (err) return err;
+                                notify(
+                                    sourceUser.name,
+                                    { name: team.name, id: team._id },
+                                    { name: project.name, id: project._id },
+                                    {
+                                        name: project.bugs[bIndex].bugId,
+                                        id: project.bugs[bIndex]._id,
+                                    },
+                                    "close",
+                                    project.bugs[bIndex].followedBy
+                                );
+                            }
+                        );
+                    }
+
+                    team.markModified("feed");
+                    project.bugs[bIndex].status = "closed";
+                    project.bugs[bIndex].closeDate = Date(Date.now());
+                    project.archivedBugs.push(
+                        project.bugs.splice(bIndex, 1)[0]
+                    );
+                    project.markModified("bugs");
+                    project.markModified("archivedBugs");
+                    team.save().then(project.save().then(res.send("success")));
+                }
+            );
+        }
+    );
+});
+
+bugRouter.post("/reOpenBug", (req, res) => {
+    Project.findById(
+        mongoose.Types.ObjectId(req.body.project),
+        (err, project) => {
+            if (err) return console.error(err);
+            var bIndex;
+            for (var i = 0; i < project.bugs.length; i++) {
+                if (project.bugs[i]._id == req.body.bug) {
+                    bIndex = i;
+                }
+            }
+
+            Team.findById(
+                mongoose.Types.ObjectId(project.team),
+                (err, team) => {
+                    if (err) return err;
+                    team.feed.unshift({
+                        feedText: `${
+                            project.bugs[bIndex].bugId
+                        } has been reopened by ${
+                            team.users.filter(
+                                (user) => user[0] == req.session.passport.user
+                            )[0][2]
+                        }`,
+                        date: new Date(),
+                        source: {
+                            sourceString: project.name,
+                            sourceId: project._id,
+                        },
+                        feedType: "open",
+                    });
+                    if (team.feed.length < 100) {
+                        team.feed.splice(100, 1);
+                    }
+
+                    //notify users
+                    if (project.bugs[bIndex].followedBy.length > 0) {
+                        User.findById(
+                            mongoose.Types.ObjectId(req.session.passport.user),
+                            (err, sourceUser) => {
+                                if (err) return err;
+                                notify(
+                                    sourceUser.name,
+                                    { name: team.name, id: team._id },
+                                    { name: project.name, id: project._id },
+                                    {
+                                        name: project.bugs[bIndex].bugId,
+                                        id: project.bugs[bIndex]._id,
+                                    },
+                                    "close",
+                                    project.bugs[bIndex].followedBy
+                                );
+                            }
+                        );
+                    }
+
+                    team.markModified("feed");
+                    project.bugs[bIndex].status = "open";
+                    project.bugs[bIndex].closeDate = Date(Date.now());
+                    project.markModified("bugs");
+                    team.save().then(project.save().then(res.send("success")));
+                }
+            );
         }
     );
 });
