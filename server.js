@@ -134,7 +134,7 @@ app.get("/checkNotifs", (req, res) => {
 });
 
 app.get("/hello", (req, res) => {
-    return res.send(req);
+    return res.send("hello");
 });
 
 app.listen(port, () => {
