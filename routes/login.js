@@ -37,7 +37,7 @@ loginRouter.post("/register", async (req, res) => {
 
 loginRouter.post(
     "/login",
-    passport.authenticate("local", {
+    passport.authenticate("jwt", {
         successRedirect: `${process.env.APP_URL}/console`,
         failureRedirect: `${process.env.APP_URL}/login`,
         failureFlash: true,
