@@ -63,7 +63,7 @@ loginRouter.get("/auth", (req, res) => {
     if (req.isAuthenticated()) {
         return res.json({ err: 0 });
     } else {
-        res.json({ err: req });
+        res.json({ err: req.session });
     }
 });
 
