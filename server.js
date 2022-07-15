@@ -133,6 +133,10 @@ app.get("/checkNotifs", (req, res) => {
     );
 });
 
+app.get("/hello", (req, res) => {
+    return res.send(req);
+});
+
 app.listen(port, () => {
     console.log(`App is listening at ${port}`);
 });

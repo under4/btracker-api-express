@@ -25,6 +25,10 @@ const BugSchema = mongoose.Schema({
         name: { type: String, default: "Not Set" },
         id: mongoose.SchemaTypes.ObjectId,
     },
+    reviewedBy: {
+        name: { type: String, default: "Not Set" },
+        id: mongoose.SchemaTypes.ObjectId,
+    },
     pictures: [],
 });
 
