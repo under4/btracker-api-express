@@ -21,7 +21,6 @@ app.use(
         credentials: true,
     })
 );
-app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: false }));
 app.use(flash());
@@ -30,9 +29,10 @@ app.use(
         secret: process.env.SESSION_SECRET,
         cookie: {
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+            secure: true,
         },
-        resave: false,
-        saveUninitialized: false,
+        saveUninitialized: true,
+        resave: true,
     })
 );
 app.use(passport.initialize());
