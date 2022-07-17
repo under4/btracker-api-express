@@ -29,7 +29,6 @@ app.use(
         secret: process.env.SESSION_SECRET,
         cookie: {
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-            secure: true,
         },
         saveUninitialized: true,
         resave: true,
@@ -41,17 +40,6 @@ app.use(methodOverride("_method"));
 
 app.use(function (req, res, next) {
     res.locals.currentUser = req.user;
-    next();
-});
-
-app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Credentials", true);
-    res.header("Access-Control-Allow-Origin", req.headers.origin);
-    res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE");
-    res.header(
-        "Access-Control-Allow-Headers",
-        "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept"
-    );
     next();
 });
 
