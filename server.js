@@ -14,13 +14,15 @@ const passport = require("passport");
 const methodOverride = require("method-override");
 const { cloudinary } = require("./utils/cloudinary");
 const APP_URL = process.env.APP_URL;
-
+/** 
 app.use(
     cors({
         origin: APP_URL,
         credentials: true,
     })
 );
+*/
+app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: false }));
 app.use(flash());
