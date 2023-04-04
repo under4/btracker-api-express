@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "test",
-    "start": "node server.js"
+    "start": "node server.js",
+    "deploy": "firebase deploy --only functions:api"
   },
   "keywords": [
     "api",
@@ -29,6 +30,6 @@
     "serve": "^13.0.2"
   },
   "engines": {
-    "node": "16.13.2"
+    "node": "16"
   }
 }
