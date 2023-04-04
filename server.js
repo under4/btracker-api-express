@@ -19,6 +19,7 @@ app.use(
     cors({
         origin: APP_URL,
         credentials: true,
+        optionsSuccessStatus: 200,
     })
 );
 //app.use(cors());
