@@ -15,6 +15,8 @@ const methodOverride = require("method-override");
 const { cloudinary } = require("./utils/cloudinary");
 const APP_URL = process.env.APP_URL;
 
+app.set("trust proxy", 1);
+
 app.use(
     cors({
         origin: APP_URL,
