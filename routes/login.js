@@ -60,8 +60,11 @@ loginRouter.delete("/logout", (req, res) => {
 });
 
 loginRouter.get("/auth", (req, res) => {
-    console.log(req);
+    //console.log(req);
+
     if (req.isAuthenticated()) {
+        console.log("here");
+        req.session.save();
         return res.json({ err: 0 });
     } else {
         res.json({ err: req.session });
