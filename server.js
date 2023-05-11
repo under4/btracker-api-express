@@ -15,13 +15,14 @@ const methodOverride = require("method-override");
 const { cloudinary } = require("./utils/cloudinary");
 const APP_URL = process.env.APP_URL;
 
-app.set("trust proxy", 1);
+app.enable("trust proxy");
 
 app.use(
     cors({
         origin: APP_URL,
         credentials: true,
         optionsSuccessStatus: 200,
+        exposedHeaders: ["Set-Cookie"],
     })
 );
 //app.use(cors());
