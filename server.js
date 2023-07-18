@@ -18,7 +18,12 @@ const APP_URL = process.env.APP_URL;
 app.enable("trust proxy");
 
 app.use(
-    cors()
+    cors({
+        origin: APP_URL,
+        credentials: true,
+        optionsSuccessStatus: 200,
+        exposedHeaders: ["Set-Cookie"],
+    })
 );
 
 app.use(express.json({ limit: "10mb" }));
