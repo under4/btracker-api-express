@@ -22,6 +22,7 @@ app.use(
         origin: APP_URL,
         credentials: true,
         optionsSuccessStatus: 200,
+        exposedHeaders: ["Set-Cookie"],
     })
 );
 
