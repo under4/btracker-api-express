@@ -6,6 +6,8 @@ const mongoose = require("mongoose");
 const app = express();
 const port = process.env.PORT || 5000;
 
+app.set("trust proxy", 1);
+
 const dbKey = process.env["db"];
 const cors = require("cors");
 const flash = require("express-flash");
