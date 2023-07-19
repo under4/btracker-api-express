@@ -6,7 +6,6 @@ const mongoose = require("mongoose");
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.set("trust proxy", 1);
 
 const dbKey = process.env["db"];
 const cors = require("cors");
@@ -19,6 +18,7 @@ const APP_URL = process.env.APP_URL;
 
 app.enable("trust proxy");
 
+app.set("trust proxy", 1);
 app.use(
     cors({
         origin: APP_URL,
@@ -26,8 +26,8 @@ app.use(
         optionsSuccessStatus: 200,
         exposedHeaders: ["Set-Cookie"],
     })
-);
-
+    );
+    
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: false }));
 app.use(flash());
@@ -35,6 +35,7 @@ app.use(
     session({
         secret: process.env.SESSION_SECRET,
         cookie: {
+            httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
             secure: true,
         },
