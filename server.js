@@ -22,7 +22,6 @@ app.use(
         origin: APP_URL,
         credentials: true,
         optionsSuccessStatus: 200,
-        exposedHeaders: ["Set-Cookie"],
     })
 );
 
@@ -34,7 +33,7 @@ app.use(
         secret: process.env.SESSION_SECRET,
         cookie: {
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-            secure: false,
+            secure: true,
         },
         saveUninitialized: true,
         resave: false,
