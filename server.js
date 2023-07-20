@@ -3,6 +3,7 @@ if (process.env.NODE_ENV != "production") {
 }
 const express = require("express");
 const mongoose = require("mongoose");
+const MongoStore = require("connect-mongo")(session);
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -41,6 +42,10 @@ app.use(
         },
         saveUninitialized: true,
         resave: false,
+        store: new MongoStore({
+            mongooseConnection: mongoose.connection,
+            touchAfter: 24 * 3600 // time period in seconds
+        }),
     })
 );
 app.use(passport.initialize());
