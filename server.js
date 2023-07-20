@@ -44,13 +44,12 @@ app.use(
         cookie: {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-            secure: true,
+            secure: false,
         },
-        saveUninitialized: true,
+        saveUninitialized: false,
         resave: false,
         store: new MongoStore({
             client: mongoose.connection.getClient(),
-            dbName: "dbKey",
             collectionName: "sessions",
             stringify: false,
             autoRemove: "interval",
