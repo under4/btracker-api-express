@@ -23,7 +23,7 @@ function initializePass(passport, getUserByEmail, getUserId) {
     };
     console.log(user);
     passport.use(
-        new LocalStrategy({ usernameField: "email" },{passwordField:"password"}, authenticateUser)
+        new LocalStrategy({ usernameField: "email" }, authenticateUser)
     );
     passport.serializeUser((user, done) => done(null, user.id));
     passport.deserializeUser((id, done) => done(null, getUserId({ id: id })));
