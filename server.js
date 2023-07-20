@@ -48,15 +48,15 @@ app.use(
         },
         saveUninitialized: true,
         resave: false,
-        store: MongoStore.create({
+        store: new MongoStore({
             client: mongoose.connection.getClient(),
             dbName: "dbKey",
             collectionName: "sessions",
             stringify: false,
             autoRemove: "interval",
             autoRemoveInterval: 1
-            })
-    })
+            }),
+})
 );
 app.use(passport.initialize());
 app.use(passport.session());
