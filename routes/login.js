@@ -63,6 +63,7 @@ loginRouter.get("/auth", (req, res) => {
     console.log('====================================');
     console.log(req);
     console.log('====================================');
+    console.log(res);
     
     if (req.isAuthenticated()) {
         console.log("authenticated");
