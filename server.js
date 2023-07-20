@@ -21,7 +21,8 @@ app.enable("trust proxy");
 app.set("trust proxy", 1);
 app.use(
     cors({
-        origin: APP_URL,
+        //origin: APP_URL,
+        origin: true,
         credentials: true,
         optionsSuccessStatus: 200,
         exposedHeaders: ["Set-Cookie"],
@@ -143,7 +144,8 @@ app.get("/checkNotifs", (req, res) => {
 });
 
 app.get("/hello", (req, res) => {
-    return res.send("hello");
+    console.log(req);
+    return res.send(`${req}  -------------------------------------------- ${res}`);
 });
 
 app.listen(port, () => {
