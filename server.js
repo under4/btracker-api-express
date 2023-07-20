@@ -26,6 +26,11 @@ app.use(
         credentials: true,
         optionsSuccessStatus: 200,
         exposedHeaders: ["Set-Cookie"],
+        withCredentials: true,
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
     })
     );
     
@@ -144,8 +149,7 @@ app.get("/checkNotifs", (req, res) => {
 });
 
 app.get("/hello", (req, res) => {
-    console.log(req);
-    return res.send(`${req}  -------------------------------------------- ${res}`);
+    return res.json(res);
 });
 
 app.listen(port, () => {
