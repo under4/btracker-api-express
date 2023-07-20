@@ -11,10 +11,15 @@ const dbKey = process.env["db"];
 const cors = require("cors");
 const flash = require("express-flash");
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const passport = require("passport");
 const methodOverride = require("method-override");
 const { cloudinary } = require("./utils/cloudinary");
 const APP_URL = process.env.APP_URL;
+
+const db = mongoose.connect(dbKey, () => {
+    console.log("connected to database");
+});
 
 
 
@@ -43,6 +48,14 @@ app.use(
         },
         saveUninitialized: true,
         resave: false,
+        store: MongoStore.create({
+            client: mongoose.connection.getClient(),
+            dbName: "dbKey",
+            collectionName: "sessions",
+            stringify: false,
+            autoRemove: "interval",
+            autoRemoveInterval: 1
+            })
     })
 );
 app.use(passport.initialize());
@@ -87,9 +100,6 @@ initializePass(
     }
 );
 
-const db = mongoose.connect(dbKey, () => {
-    console.log("connected to database");
-});
 
 app.post("/postToFeed", (req, res) => {
     User.findById(
