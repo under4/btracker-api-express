@@ -21,16 +21,10 @@ app.enable("trust proxy");
 app.set("trust proxy", 1);
 app.use(
     cors({
-        //origin: APP_URL,
-        origin: true,
+        origin: APP_URL,
         credentials: true,
         optionsSuccessStatus: 200,
         exposedHeaders: ["Set-Cookie"],
-        withCredentials: true,
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
     })
     );
     
@@ -149,7 +143,7 @@ app.get("/checkNotifs", (req, res) => {
 });
 
 app.get("/hello", (req, res) => {
-    return res.json(res);
+    return res.send("hello");
 });
 
 app.listen(port, () => {
