@@ -21,7 +21,7 @@ function initializePass(passport, getUserByEmail, getUserId) {
             return done(e);
         }
     };
-    console.log(user);
+
     passport.use(
         new LocalStrategy({ usernameField: "email" }, authenticateUser)
     );
