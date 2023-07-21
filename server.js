@@ -28,10 +28,6 @@ const db = mongoose.connect(dbKey, () => {
 
 app.enable("trust proxy");
 
-app.set("trust proxy", 1);
-
-app.use(cookieParser('xxx'));
-
 app.use(
     cors({
         origin: APP_URL,
@@ -55,13 +51,6 @@ app.use(
         },
         saveUninitialized: false,
         resave: false,
-        store: new MongoStore({
-            client: mongoose.connection.getClient(),
-            collectionName: "sessions",
-            stringify: false,
-            autoRemove: "interval",
-            autoRemoveInterval: 1
-            }),
 })
 );
 app.use(passport.initialize());
