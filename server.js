@@ -34,6 +34,7 @@ app.use(
         credentials: true,
         optionsSuccessStatus: 200,
         exposedHeaders: ["Set-Cookie"],
+        
     })
     );
     
@@ -48,6 +49,7 @@ app.use(
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
             secure: false,
+            sameSite: "none",
         },
         saveUninitialized: false,
         resave: false,
