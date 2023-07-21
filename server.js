@@ -11,9 +11,9 @@ const dbKey = process.env["db"];
 const cors = require("cors");
 const flash = require("express-flash");
 const session = require("express-session");
-//const MongoStore = require("connect-mongo");
+const MongoStore = require("connect-mongo");
 
-//const cookieParser = require("cookie-parser");
+const cookieParser = require("cookie-parser");
 
 const passport = require("passport");
 const methodOverride = require("method-override");
@@ -27,6 +27,10 @@ const db = mongoose.connect(dbKey, () => {
 
 
 app.enable("trust proxy");
+
+app.set("trust proxy", 1);
+
+app.use(cookieParser('xxx'));
 
 app.use(
     cors({
@@ -51,6 +55,13 @@ app.use(
         },
         saveUninitialized: false,
         resave: false,
+        store: new MongoStore({
+            client: mongoose.connection.getClient(),
+            collectionName: "sessions",
+            stringify: false,
+            autoRemove: "interval",
+            autoRemoveInterval: 1
+            }),
 })
 );
 app.use(passport.initialize());
