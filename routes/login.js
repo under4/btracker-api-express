@@ -7,6 +7,7 @@ const bcrypt = require("bcrypt");
 const passport = require("passport");
 
 loginRouter.post("/register", async (req, res) => {
+    console.log(req.body);
     try {
         const hashedPass = bcrypt.hash(req.body.password, 10, (err, hash) => {
             if (err) {
@@ -37,6 +38,11 @@ loginRouter.post("/register", async (req, res) => {
 
 loginRouter.post(
     "/login",
+    (req, res, next) => {
+        console.log("login request received");
+        console.log(req.body);
+        next();
+    },
     passport.authenticate("local", {
         successRedirect: `${process.env.APP_URL}/console`,
         failureRedirect: `${process.env.APP_URL}/login`,
@@ -60,7 +66,7 @@ loginRouter.delete("/logout", (req, res) => {
 });
 
 loginRouter.get("/auth", (req, res) => {
-    console.log(req);
+    console.log(req.isAuthenticated());
     if (req.isAuthenticated()) {
         return res.json({ err: 0 });
     } else {

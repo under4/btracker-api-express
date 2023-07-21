@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 function initializePass(passport, getUserByEmail, getUserId) {
     const authenticateUser = async (email, password, done) => {
         const user = await getUserByEmail({ username: email });
-        //console.log(user, " user");
+        console.log(user, " user");
         if (user == null) {
             return done(null, false, { message: "No user found" });
         }
