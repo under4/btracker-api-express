@@ -6,37 +6,63 @@ const mongoose = require("mongoose");
 const app = express();
 const port = process.env.PORT || 5000;
 
+
 const dbKey = process.env["db"];
 const cors = require("cors");
 const flash = require("express-flash");
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
+
+const cookieParser = require("cookie-parser");
+
 const passport = require("passport");
 const methodOverride = require("method-override");
 const { cloudinary } = require("./utils/cloudinary");
 const APP_URL = process.env.APP_URL;
 
+const db = mongoose.connect(dbKey, () => {
+    console.log("connected to database");
+});
+
+
+
+app.enable("trust proxy");
+
 app.set("trust proxy", 1);
+
+app.use(cookieParser('xxx'));
 
 app.use(
     cors({
         origin: APP_URL,
         credentials: true,
         optionsSuccessStatus: 200,
+        exposedHeaders: ["Set-Cookie"],
     })
-);
-//app.use(cors());
+    );
+    
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: false }));
 app.use(flash());
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
+        cookieName: 'session',
         cookie: {
+            httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+            secure: false,
         },
         saveUninitialized: false,
         resave: false,
-    })
+        store: new MongoStore({
+            client: mongoose.connection.getClient(),
+            collectionName: "sessions",
+            stringify: false,
+            autoRemove: "interval",
+            autoRemoveInterval: 1
+            }),
+})
 );
 app.use(passport.initialize());
 app.use(passport.session());
@@ -80,9 +106,6 @@ initializePass(
     }
 );
 
-const db = mongoose.connect(dbKey, () => {
-    console.log("connected to database");
-});
 
 app.post("/postToFeed", (req, res) => {
     User.findById(

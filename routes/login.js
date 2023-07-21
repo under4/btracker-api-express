@@ -68,8 +68,10 @@ loginRouter.delete("/logout", (req, res) => {
 loginRouter.get("/auth", (req, res) => {
     console.log(req.isAuthenticated());
     if (req.isAuthenticated()) {
+        console.log("authenticated");
         return res.json({ err: 0 });
     } else {
+        console.log("not authenticated");
         res.json({ err: req.session });
     }
 });
