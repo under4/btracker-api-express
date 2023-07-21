@@ -39,7 +39,7 @@ loginRouter.post("/register", async (req, res) => {
 loginRouter.post(
     "/login",
     (req, res, next) => {
-        console.log("login request received");
+        //console.log("login request received");
         console.log(req.body);
         next();
     },
