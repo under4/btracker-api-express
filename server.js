@@ -55,6 +55,13 @@ app.use(
         },
         saveUninitialized: false,
         resave: false,
+        store: new MongoStore({
+            client: mongoose.connection.getClient(),
+            collectionName: "sessions",
+            stringify: false,
+            autoRemove: "interval",
+            autoRemoveInterval: 1
+            }),
 })
 );
 app.use(passport.initialize());
