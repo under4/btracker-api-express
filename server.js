@@ -24,12 +24,13 @@ const db = mongoose.connect(dbKey, () => {
 });
 
 
-app.enable("trust proxy");
+//app.enable("trust proxy");
 app.set("trust proxy", 1);
 
 app.use(
     cors({
-        origin: APP_URL,
+        //origin: APP_URL,
+        origin: true,
         credentials: true,
         optionsSuccessStatus: 200,
         exposedHeaders: ["Set-Cookie"],
