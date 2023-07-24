@@ -16,6 +16,8 @@ const methodOverride = require("method-override");
 const { cloudinary } = require("./utils/cloudinary");
 const APP_URL = process.env.APP_URL;
 
+const MongoStore = require("connect-mongo");
+
 const db = mongoose.connect(dbKey, () => {
     console.log("connected to database");
 });
@@ -42,8 +44,7 @@ app.use(
         cookie: {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-            secure: true,
-            sameSite: "none",
+            secure: process.env.NODE_ENV === "production" ? true : false,
         },
         saveUninitialized: true,
         resave: false,
