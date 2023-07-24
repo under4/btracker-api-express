@@ -29,8 +29,7 @@ app.set("trust proxy", 1);
 
 app.use(
     cors({
-        //origin: APP_URL,
-        origin: true,
+        origin: APP_URL,
         credentials: true,
         optionsSuccessStatus: 200,
         exposedHeaders: ["Set-Cookie"],
@@ -47,6 +46,7 @@ app.use(
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
             secure: process.env.NODE_ENV === "production" ? true : false,
+            sameSite: false,
         },
         saveUninitialized: true,
         resave: false,
