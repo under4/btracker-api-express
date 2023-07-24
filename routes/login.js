@@ -40,7 +40,7 @@ loginRouter.post(
     "/login",
     (req, res, next) => {
         //console.log("login request received");
-        console.log(req.body);
+        console.log("login.js auth func. " ,req.body);
         next();
     },
     passport.authenticate("local", {

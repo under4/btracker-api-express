@@ -86,13 +86,13 @@ initializePass(
         console.log("inside get userby email");
         const userQuery = User.findOne(username).exec();
         const user = await userQuery;
-        console.log(user);
+        //console.log(user);
         return user;
     },
     async (id) => {
         const idQuery = User.find(id).exec();
         const idResult = await idQuery;
-        console.log(idResult);
+        //console.log(idResult);
         return idResult;
     }
 );

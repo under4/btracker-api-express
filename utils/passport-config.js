@@ -7,7 +7,7 @@ function initializePass(passport, getUserByEmail, getUserId) {
         console.log("inside authenticate user")
         //console.log(user, password)
         const user = await getUserByEmail({ username: email });
-        console.log(user, " user");
+        //console.log(user, " user");
         if (user == null) {
             return done(null, false, { message: "No user found" });
         }
