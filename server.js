@@ -16,7 +16,8 @@ const methodOverride = require("method-override");
 const { cloudinary } = require("./utils/cloudinary");
 const APP_URL = process.env.APP_URL;
 
-const MongoStore = require("connect-mongo");
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
 
 const db = mongoose.connect(dbKey, () => {
     console.log("connected to database");
@@ -24,6 +25,7 @@ const db = mongoose.connect(dbKey, () => {
 
 
 app.enable("trust proxy");
+app.set("trust proxy", 1);
 
 app.use(
     cors({
@@ -31,7 +33,6 @@ app.use(
         credentials: true,
         optionsSuccessStatus: 200,
         exposedHeaders: ["Set-Cookie"],
-        
     })
     );
     
