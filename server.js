@@ -46,7 +46,7 @@ app.use(
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
             secure: process.env.NODE_ENV === "production" ? true : false,
-            sameSite: false,
+            sameSite: "lax",
         },
         saveUninitialized: true,
         resave: false,
