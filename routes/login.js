@@ -1,6 +1,6 @@
 const loginRouter = require("express").Router();
 
-const mongoose = require("mongoose");
+//const mongoose = require("mongoose");
 
 const User = require("../Schema/User.js");
 const bcrypt = require("bcrypt");
@@ -41,7 +41,7 @@ loginRouter.post(
         successRedirect: `${process.env.APP_URL}/console`,
         failureRedirect: `${process.env.APP_URL}/login`,
         failureFlash: true,
-    })
+    },)
 );
 
 loginRouter.post("/usernameCheck", (req, res) => {
@@ -60,7 +60,8 @@ loginRouter.delete("/logout", (req, res) => {
 });
 
 loginRouter.get("/auth", (req, res) => {
-    /*console.log('====================================');
+    /*
+    console.log('====================================');
     console.log(req);
     console.log('====================================');
     console.log(res);

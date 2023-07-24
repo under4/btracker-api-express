@@ -11,10 +11,6 @@ const dbKey = process.env["db"];
 const cors = require("cors");
 const flash = require("express-flash");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
-
-const cookieParser = require("cookie-parser");
-
 const passport = require("passport");
 const methodOverride = require("method-override");
 const { cloudinary } = require("./utils/cloudinary");
@@ -25,12 +21,7 @@ const db = mongoose.connect(dbKey, () => {
 });
 
 
-
 app.enable("trust proxy");
-
-app.set("trust proxy", 1);
-
-app.use(cookieParser('xxx'));
 
 app.use(
     cors({
@@ -47,21 +38,13 @@ app.use(flash());
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
-        cookieName: 'session',
         cookie: {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
             secure: false,
         },
-        saveUninitialized: false,
+        saveUninitialized: true,
         resave: false,
-        store: new MongoStore({
-            client: mongoose.connection.getClient(),
-            collectionName: "sessions",
-            stringify: false,
-            autoRemove: "interval",
-            autoRemoveInterval: 1
-            }),
 })
 );
 app.use(passport.initialize());
@@ -95,13 +78,16 @@ const initializePass = require("./utils/passport-config");
 initializePass(
     passport,
     async (username) => {
+        console.log("inside get userby email");
         const userQuery = User.findOne(username).exec();
         const user = await userQuery;
+        console.log(user);
         return user;
     },
     async (id) => {
         const idQuery = User.find(id).exec();
         const idResult = await idQuery;
+        console.log(idResult);
         return idResult;
     }
 );
@@ -160,8 +146,9 @@ app.get("/checkNotifs", (req, res) => {
     );
 });
 
-app.get("/hello", (req, res) => {
-    return res.send("hello");
+app.get("/ping", (req, res) => {
+    console.log(db)
+    return res.send("pong");
 });
 
 app.listen(port, () => {
