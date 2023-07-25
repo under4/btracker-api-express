@@ -9,7 +9,7 @@ const passport = require("passport");
 loginRouter.post("/register", async (req, res) => {
     console.log(req.body);
     try {
-        const hashedPass = bcrypt.hash(req.body.password, 10, (err, hash) => {
+        bcrypt.hash(req.body.password, 10, (err, hash) => {
             if (err) {
                 return console.log(err);
             }

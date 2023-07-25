@@ -16,6 +16,8 @@ const methodOverride = require("method-override");
 const { cloudinary } = require("./utils/cloudinary");
 const APP_URL = process.env.APP_URL;
 
+const MongoStore = require("connect-mongo");
+
 const cookieParser = require("cookie-parser");
 app.use(cookieParser());
 
@@ -50,6 +52,13 @@ app.use(
         },
         saveUninitialized: true,
         resave: false,
+        store: new MongoStore({
+            client: mongoose.connection.getClient(),
+            collectionName: "sessions",
+            stringify: false,
+            autoRemove: "interval",
+            autoRemoveInterval: 1
+            }),
 })
 );
 app.use(passport.initialize());
