@@ -485,8 +485,13 @@ bugRouter.post("/postBug", (req, res) => {
                     i--;
                 }
             }
-
+            console.log(labels)
+            if(!team.labels){
+                team.labels = [];
+            }
+            console.log(team)
             for (let label of labels) {
+                console.log(label)
                 if (!team.labels[label]) {
                     team.labels[label] = `rgb(${random(150)}, ${random(
                         150
