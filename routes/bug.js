@@ -487,9 +487,8 @@ bugRouter.post("/postBug", (req, res) => {
             }
             console.log(labels)
             if(!team.labels){
-                team.labels = [];
+                team.labels = {};
             }
-            console.log(team)
             for (let label of labels) {
                 console.log(label)
                 if (!team.labels[label]) {
